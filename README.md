@@ -2,7 +2,7 @@
 
 Task Designation:
 
-1) PCB Design : Me and Daniel
+1) PCB Design : Bryan, Daniel
 - Goal: Have progress on the PCB design aspects of the project so that we can present either a complete schematic or a thorough prototype so that we can order it first thing 2nd semester.,
 - I'm planning on having an STM32 board and a PLC board with the ST8500 and the STLD1 chips that will house the coupling circuit.,
 - I think splitting both boards would be a good idea so Daniel can likely work on the PLC board and I'll join once I finish the STM32 board which should be easier.,
