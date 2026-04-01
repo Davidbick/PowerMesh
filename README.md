@@ -7,7 +7,7 @@ Task Designation:
 - I'm planning on having an STM32 board and a PLC board with the ST8500 and the STLD1 chips that will house the coupling circuit.,
 - I think splitting both boards would be a good idea so Daniel can likely work on the PLC board and I'll join once I finish the STM32 board which should be easier.,
 
-2) Perf board setup: Logan
+2) ST setup: Logan, David
 - Start communication between the 3 st chips using the PERF boards robert bought/already has.,
 - Connect to the STM devboards and try to drive the ST8500 and the STLD1. While we won't be connected to the powerlines we can test functionality of the chips and start designing aspects of the coupling circuit potentially.,
 - Goal: Have basic code functionality with the stm chips so that we can re-use that code on the final design with the PCB or in a robust breadboard testing.,
