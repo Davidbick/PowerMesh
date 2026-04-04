@@ -1,0 +1,9 @@
+- VSS is the digital ground, VSSA is the Analog ground (DAC/ADC)
+    -Not sure what the requirement is for this, aka will we need this? Look at the evalboard
+
+-VDD is +3.3V for the MCU. VBAT is something else with an external battery but we can use +3.3v for it.
+
+-Decoupling capacitors are used to place small energy storages along the MCU so that it doesn't rely on main battery.
+    - 1 Decoupling-capa(100n F) per VBAT and VDD. Extra 10 uF at the end (volt decoupling)
+
+-WTF is a fertite bead
