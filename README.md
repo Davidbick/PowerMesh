@@ -23,3 +23,4 @@ Our user interacts with Home Assistant which transfers the commands via the ST85
 
 - Principal component research. We've narrowed our options to the ST8500 and STLD1 chips that powered a ST PLC development board.
 - We've started PCB design on the hub infrastructure. Mostly on the digital side of the board with the STM32F4, ST8500, and STLD1.
+- Started STM32 bring-up by writing and testing basic code for UART and peripherals without having the final hardware. Also planned out how the STM32 will communicate with the ST8500.
