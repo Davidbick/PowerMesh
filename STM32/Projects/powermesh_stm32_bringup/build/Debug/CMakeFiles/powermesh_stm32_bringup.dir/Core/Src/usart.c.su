@@ -1,0 +1,3 @@
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/Core/Src/usart.c:31:6:MX_USART2_UART_Init	8	static
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/Core/Src/usart.c:59:6:HAL_UART_MspInit	48	static
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/Core/Src/usart.c:89:6:HAL_UART_MspDeInit	16	static

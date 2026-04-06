@@ -1,0 +1,106 @@
+{
+	"configurations" : 
+	[
+		{
+			"abstractTargets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "stm32cubemx::@768a070a0fe75716b479",
+					"jsonFile" : "target-stm32cubemx-Debug-a3f89c350aeddbcbfa13.json",
+					"name" : "stm32cubemx",
+					"projectIndex" : 0
+				}
+			],
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-f040eec181a89de70dbe.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.22"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"abstractTargetIndexes" : 
+					[
+						0
+					],
+					"build" : "cmake/stm32cubemx",
+					"jsonFile" : "directory-cmake.stm32cubemx-Debug-720efe0a241989607e76.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.22"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "cmake/stm32cubemx",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"abstractTargetIndexes" : 
+					[
+						0
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "powermesh_stm32_bringup",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "STM32_Drivers::@768a070a0fe75716b479",
+					"jsonFile" : "target-STM32_Drivers-Debug-e906fde4c7cfa97cc248.json",
+					"name" : "STM32_Drivers",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "powermesh_stm32_bringup::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-powermesh_stm32_bringup-Debug-86bdc64b364f1b8fb917.json",
+					"name" : "powermesh_stm32_bringup",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug",
+		"source" : "C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 10
+	}
+}

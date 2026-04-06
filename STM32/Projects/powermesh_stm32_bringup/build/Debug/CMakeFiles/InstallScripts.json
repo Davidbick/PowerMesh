@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/cmake_install.cmake",
+		"C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

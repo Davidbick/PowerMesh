@@ -1,0 +1,6 @@
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/CMakeFiles/powermesh_stm32_bringup.dir
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/CMakeFiles/edit_cache.dir
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/CMakeFiles/rebuild_cache.dir
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Users/Admin/Documents/GitHub/PowerMesh/STM32/Projects/powermesh_stm32_bringup/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
