@@ -26,8 +26,10 @@ Install the following:
 
 From project root:
 
+```
 cmake --preset Debug
 cmake --build --preset Debug
+```
 
 ## Hardware Test (When Board Arrives)
 
