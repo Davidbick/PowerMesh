@@ -1,0 +1,3 @@
+This is mostly a temp file.
+
+This file contains information about Home Assistant, how it is used, and how it works with our hardware.
