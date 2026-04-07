@@ -1117,6 +1117,530 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "plc-pcb:STLD1"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at -0.762 -1.016 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "STLD1_1_1"
+				(rectangle
+					(start 0 38.1)
+					(end 38.1 0)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin power_in line
+					(at 0 25.4 0)
+					(length 2.54)
+					(name "PGND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 0 22.86 0)
+					(length 2.54)
+					(name "PA2_OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 0 20.32 0)
+					(length 2.54)
+					(name "PA2_OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 0 17.78 0)
+					(length 2.54)
+					(name "PA1_OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 0 15.24 0)
+					(length 2.54)
+					(name "PA1_OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 12.7 0)
+					(length 2.54)
+					(name "PGND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 12.7 0 90)
+					(length 2.54)
+					(name "PVCC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 15.24 0 90)
+					(length 2.54)
+					(name "VCC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 0 90)
+					(length 2.54)
+					(name "AGND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 20.32 0 90)
+					(length 2.54)
+					(name "CSF_OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 22.86 0 90)
+					(length 2.54)
+					(name "AVDD_5V"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 25.4 0 90)
+					(length 2.54)
+					(name "RSV0"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 38.1 12.7 180)
+					(length 2.54)
+					(name "PA1_INN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 38.1 15.24 180)
+					(length 2.54)
+					(name "PA1_INP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 38.1 17.78 180)
+					(length 2.54)
+					(name "PA2_INP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 38.1 20.32 180)
+					(length 2.54)
+					(name "PA2_INN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 38.1 22.86 180)
+					(length 2.54)
+					(name "RSV1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 38.1 25.4 180)
+					(length 2.54)
+					(name "RSV2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 25.4 38.1 270)
+					(length 2.54)
+					(name "RSV3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin output line
+					(at 22.86 38.1 270)
+					(length 2.54)
+					(name "THERM"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 20.32 38.1 270)
+					(length 2.54)
+					(name "IBIAS_IN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 17.78 38.1 270)
+					(length 2.54)
+					(name "TX_ON_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 15.24 38.1 270)
+					(length 2.54)
+					(name "TX_ON_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 12.7 38.1 270)
+					(length 2.54)
+					(name "PVCC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 6.35 38.1 270)
+					(length 2.54)
+					(name "AGND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 	)
 	(symbol
 		(lib_id "plc-pcb:ST8500")
@@ -1358,6 +1882,155 @@
 			(project "plc-pcb"
 				(path "/cfc1df3c-f246-459c-9db8-785cc3c454a1"
 					(reference "U1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "plc-pcb:STLD1")
+		(at 125.73 292.1 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "97ee02c6-66bb-4cca-a4ea-fe7202104317")
+		(property "Reference" "U2"
+			(at 166.37 262.8198 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 125.73 292.1 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 125.73 292.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 125.73 292.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 125.73 292.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "24"
+			(uuid "0eb4555c-78fd-4a66-a2d4-ea282b0f5848")
+		)
+		(pin "6"
+			(uuid "d42cdaec-148e-48eb-8fb4-674db65659f9")
+		)
+		(pin "4"
+			(uuid "9b3b668c-a4dd-4fec-8b3d-ab8df5955657")
+		)
+		(pin "21"
+			(uuid "62c107c5-58e1-4aa9-a0e3-0b0b23f1debd")
+		)
+		(pin "9"
+			(uuid "6e10e37b-bf04-477a-8c27-0d28401eaafd")
+		)
+		(pin "1"
+			(uuid "b3114716-8e56-4776-9d27-cc1f71e251f0")
+		)
+		(pin "20"
+			(uuid "7a222cbc-80c0-4be9-a54c-fd9b26bf7b72")
+		)
+		(pin "2"
+			(uuid "a3a32cd9-d748-41c8-8ed9-30da64309b2e")
+		)
+		(pin "14"
+			(uuid "843735d1-8710-4118-a845-c3d421fec205")
+		)
+		(pin "23"
+			(uuid "4378b52e-dc13-42fa-9abc-7877b2a55012")
+		)
+		(pin "11"
+			(uuid "72eac387-9106-4fdb-b585-e6208dfeba2c")
+		)
+		(pin "7"
+			(uuid "fe9c1bc9-6de9-4702-9362-6ae918781ef3")
+		)
+		(pin "22"
+			(uuid "7c478e7d-e888-4aac-ab16-358c498d25b2")
+		)
+		(pin "15"
+			(uuid "afadc907-f632-423a-8964-b57ac4b86665")
+		)
+		(pin "19"
+			(uuid "ab68f66d-57bb-40df-923e-2e1ef77ab2a9")
+		)
+		(pin "12"
+			(uuid "20624a56-268e-4cf2-b6e3-47da2a991320")
+		)
+		(pin "13"
+			(uuid "d74b93cf-36bf-498e-b5d7-4eec858e5249")
+		)
+		(pin "5"
+			(uuid "dba34f86-2a0c-4ee2-a3d1-6f8139217d0e")
+		)
+		(pin "8"
+			(uuid "bf895165-5223-4f5b-9fe7-857025f83b70")
+		)
+		(pin "10"
+			(uuid "b32c78ff-f4ea-4b12-a9b6-b244cb446715")
+		)
+		(pin "16"
+			(uuid "07cff717-6423-4a93-a49d-7d5f719e4c12")
+		)
+		(pin "25"
+			(uuid "2a754aef-a67b-4202-b6ee-33c47a07f8a4")
+		)
+		(pin "3"
+			(uuid "fec6229d-8664-4114-9786-8979d7ace85f")
+		)
+		(pin "18"
+			(uuid "f2b68d27-1991-4e83-9c37-7a460acbb36b")
+		)
+		(pin "17"
+			(uuid "558e198c-5dcb-4632-96bc-9c824c2043cd")
+		)
+		(instances
+			(project "plc-pcb"
+				(path "/cfc1df3c-f246-459c-9db8-785cc3c454a1"
+					(reference "U2")
 					(unit 1)
 				)
 			)
