@@ -1,3 +1,23 @@
-This is mostly a temp file.
-
 This file contains information about Home Assistant, how it is used, and how it works with our hardware.
+
+When RPI is ready, enter this in a browser
+http://homeassistant.local:8123/
+
+RPI Micro SD configuration:
+https://www.home-assistant.io/installation/raspberrypi/
+Notes from the link:
+1) Download RPI Imager and launch it
+2) Select RPI3 as device
+3) Select Other SPECIFIC-purpose OS (OS Section)
+4) Select Home Automation and select Home Assistant (OS Section)
+5) There should only be one HA option to choose from. Select it (OS Section)
+6) In the storage section, select the Micro SD we are writing it to
+7) Click next and it should begin writing HAOS to the Micro SD
+
+Home Assistant Companion App Download & Instructions:
+https://companion.home-assistant.io/docs/getting_started/
+
+Home Assistant Green:
+https://www.home-assistant.io/green/
+
+
