@@ -1,7 +1,10 @@
 This file contains information about Home Assistant, how it is used, and how it works with our hardware.
 
-When RPI is ready, enter this in a browser
+When RPI is ready, enter this in a browser:
 http://homeassistant.local:8123/
+If white screen with HA logo, enter this in a browser:
+http://homeassistant.local:4357
+If everything is green, then the RPI is being bottlenecked due to its limitations. Wait like 20 minutes before entering the other URL into a browser (close all HA instances so that the browsers won't take resources from the RPI).
 
 RPI Micro SD configuration:
 https://www.home-assistant.io/installation/raspberrypi/
