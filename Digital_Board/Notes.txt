@@ -9,3 +9,12 @@
 -WTF is a fertite bead
 
 - Look at the SPDT more for the BOOT0. I'm not exactly sure how this works.
+
+- DO WE NEED USB if we have the UART?
+
+-24 MHz for USB, just in case? FINISH OSCILLATOR
+
+- Why is the USB shield NC/
+-Check USB for resistors that I see on all other designs.
+
+-GPIO6/7 are the RX and TX
