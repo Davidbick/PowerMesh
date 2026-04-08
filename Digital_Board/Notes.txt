@@ -7,3 +7,5 @@
     - 1 Decoupling-capa(100n F) per VBAT and VDD. Extra 10 uF at the end (volt decoupling)
 
 -WTF is a fertite bead
+
+- Look at the SPDT more for the BOOT0. I'm not exactly sure how this works.
