@@ -15,7 +15,7 @@ Notes from the link:
 4) Select Home Automation and select Home Assistant (OS Section)
 5) There should only be one HA option to choose from. Select it (OS Section)
 6) In the storage section, select the Micro SD we are writing it to
-7) Click next and it should begin writing HAOS to the Micro SD
+7) Click next and it should begin writing HA OS to the Micro SD
 
 Home Assistant Companion App Download & Instructions:
 https://companion.home-assistant.io/docs/getting_started/
@@ -23,4 +23,7 @@ https://companion.home-assistant.io/docs/getting_started/
 Home Assistant Green:
 https://www.home-assistant.io/green/
 
-
+RPI Debugging:
+1) Check if the RPI is receiving enough power. This can be checked by seeing a constant red LED on the RPI. If it is flickering, the RPI3 is not receiving the constant power it needs.
+2) To see if HA is working, look if there is green flickering on the RPI. If there is green flickering, then HA is working.
+3) If there is a white screen with HA logo only when doing http://homeassistant.local:8123/, use http://IP_ADDRESS:8123 or the app instead. This is likely due to browser cache issues or hardware limitations of the RPI3.
