@@ -1,0 +1,3 @@
+The smart bulb we will be using is the Matter-enabled Linkind smart bulbs.
+
+These bulbs will be useful in our project due to its relatively low cost and most importantly Matter integration. Because the Matter standard is being adopted by various big companies such as Amazon, Google Home, Samsung, etc. the important of our project being able to connect with Matter devices rises. Using these Linkind smart bulbs as a starting point (as far as smart bulbs are concerned), we will research and develop our power line communication with the Matter standard in mind. This will mean we will have to be knowledgeable about how Home Assistant and Matter will communicate.
