@@ -17,4 +17,12 @@
 - Why is the USB shield NC/
 -Check USB for resistors that I see on all other designs.
 
--GPIO6/7 are the RX and TX
+-GPIO6/7 are the RX and TX (HOST_IF1-4 are the UART)
+    - Use USART2 asynchonrous on our design
+
+Questions:
+ - What is the UART/USB bridge for if USB is connected to the microcontroller?
+
+
+TODO:
+1) Confirm the Pitch for the STM32 microcontrollers

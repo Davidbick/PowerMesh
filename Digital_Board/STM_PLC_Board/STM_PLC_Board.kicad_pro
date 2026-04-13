@@ -414,15 +414,33 @@
         "filename": "STM_PLC_Board.kicad_sch",
         "name": "STM_PLC_Board",
         "uuid": "ba7311af-3053-4b06-bf5c-d2742cc73435"
+      },
+      {
+        "filename": "components.kicad_sch",
+        "name": "Components",
+        "uuid": "bd693732-8b51-47d4-8a47-72497798827e"
+      },
+      {
+        "filename": "st8500_board.kicad_sch",
+        "name": "ST8500_Board",
+        "uuid": "e8093c76-2a77-430a-a896-a4976fe4bb75"
       }
     ],
-    "used_designators": "R1,P1,C7-8,#PWR10-12,Y1",
+    "used_designators": "SW1-3,C9-10,D1-4,TP1-4,R2-22,#PWR13-30,Q1-4,U2,J2",
     "variants": []
   },
   "sheets": [
     [
       "ba7311af-3053-4b06-bf5c-d2742cc73435",
       "STM_PLC_Board"
+    ],
+    [
+      "bd693732-8b51-47d4-8a47-72497798827e",
+      "Components"
+    ],
+    [
+      "e8093c76-2a77-430a-a896-a4976fe4bb75",
+      "ST8500_Board"
     ]
   ],
   "text_variables": {},
