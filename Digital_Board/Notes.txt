@@ -20,9 +20,14 @@
 -GPIO6/7 are the RX and TX (HOST_IF1-4 are the UART)
     - Use USART2 asynchonrous on our design
 
+- Add ferite bead to the regulator to reduce noise
+
+-
+
 Questions:
  - What is the UART/USB bridge for if USB is connected to the microcontroller?
 
 
 TODO:
 1) Confirm the Pitch for the STM32 microcontrollers
+2) The Oscillator capactiors are WRONG!!!!
