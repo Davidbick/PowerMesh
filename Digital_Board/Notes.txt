@@ -31,3 +31,31 @@ Questions:
 TODO:
 1) Confirm the Pitch for the STM32 microcontrollers
 2) The Oscillator capactiors are WRONG!!!!
+
+Slide 7:
+	-Project is in the realm of research
+	- PLC standards are not new, and are still widely used for smart metering technologies
+	- However the standards have been largely dormant since the early 2010s. Which is in-line with the various ST chip options and their respective development kits.
+	
+	- Prior X10 adapters were a home standard for PLC communication between devices. But when wireless technologies blew up they rapidly shortened their usage.
+	- Existing standards are G3-PLC, PRIME, and IEEE 1901.2
+		- Difference is IEEE 1901.2 is lower stack protocol compared to GL3 that does RF communication
+
+Slide 8:
+	- Our initial research focused on research on the available resources and how to integrate them into our hub system.
+	- Matter and Home Assistant are wide spread technologies which are tested we need to apply both of them.
+	
+	- The current state of the project is split into multiple groups: PCB design, software integration, and application design with HA
+	- Our done metrics are the entirety of the research and schematic design for the separate boards. With software integration for our chosen chipset.
+	
+Slide 9:
+	- Not going to go through everything but main aspects of thedigital board.
+		- SWD for debugging
+		- 2 UART channels as per existing EVAL kits
+		- USBC for any integration with a desktop computer
+		- External oscillator
+Slide 10:
+	- STM32 to St8500 male pins
+	- Access to SPI and I2C channels in case
+	- Basics like reset buttons and LEDs
+
