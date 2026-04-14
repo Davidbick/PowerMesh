@@ -3325,7 +3325,7 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "Miss Connector\n"
+	(text "Misc. Connector\n"
 		(exclude_from_sim no)
 		(at 35.814 133.096 0)
 		(effects
