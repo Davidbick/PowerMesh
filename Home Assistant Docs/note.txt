@@ -6,6 +6,9 @@ If white screen with HA logo, enter this in a browser:
 http://homeassistant.local:4357
 If everything is green, then the RPI is being bottlenecked due to its limitations. Wait like 20 minutes before entering the other URL into a browser (close all HA instances so that the browsers won't take resources from the RPI).
 
+Adding matter device
+open HA app -> settings -> device & services -> Search and select "Matter" -> use official matter server (box selected) -> scan QR code or hold phone near Matter device -> device should be connected after naming it
+
 RPI Micro SD configuration:
 https://www.home-assistant.io/installation/raspberrypi/
 Notes from the link:
