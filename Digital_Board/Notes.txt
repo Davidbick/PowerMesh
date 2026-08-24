@@ -54,8 +54,10 @@ Slide 9:
 		- 2 UART channels as per existing EVAL kits
 		- USBC for any integration with a desktop computer
 		- External oscillator
-Slide 10:
 	- STM32 to St8500 male pins
 	- Access to SPI and I2C channels in case
 	- Basics like reset buttons and LEDs
 
+
+Pawpilot:
+- 

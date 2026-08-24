@@ -4713,17 +4713,6 @@
 		)
 		(uuid "9c16a8fa-5c5b-4d89-917d-dc487c7750cd")
 	)
-	(label "BOOT0"
-		(at 77.47 36.83 0)
-		(effects
-			(font
-				(size 1.016 1.016)
-				(thickness 0.127)
-			)
-			(justify left bottom)
-		)
-		(uuid "f9dbf5a0-1fc4-4f3c-97c9-43f2822c29a2")
-	)
 	(global_label "LED0"
 		(shape input)
 		(at 130.81 55.88 180)
