@@ -5094,6 +5094,16 @@
 			(embedded_fonts no)
 		)
 	)
+	(text "Add JTAG\n"
+		(exclude_from_sim no)
+		(at 274.574 16.002 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ad93806a-2063-410e-81c1-943c01b84003")
+	)
 	(junction
 		(at 129.54 67.31)
 		(diameter 0)
