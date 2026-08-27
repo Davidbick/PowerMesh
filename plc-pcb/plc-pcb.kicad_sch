@@ -2211,12 +2211,6 @@
 		(uuid "0cca7c3c-b4c4-4f24-81e7-006cf918fb9d")
 	)
 	(junction
-		(at 127 165.1)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "37b2db2e-4373-462f-a00d-88e38d0b1711")
-	)
-	(junction
 		(at 168.91 95.25)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2259,12 +2253,6 @@
 		(uuid "6f3f83cf-47bf-4b86-a35f-4f22c962476f")
 	)
 	(junction
-		(at 181.61 95.25)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "77191516-3b6b-4d2f-8609-e1c51f7fac0c")
-	)
-	(junction
 		(at 124.46 123.19)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2289,10 +2277,16 @@
 		(uuid "9f405b19-1bf4-4393-90b5-ecb190976dc2")
 	)
 	(junction
+		(at 127 165.1)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "bbd6c8a4-ba17-4837-829f-5ca9fa4d90f8")
+	)
+	(junction
 		(at 127 190.5)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "aa58c415-dd60-4a23-846b-1b35e53e053f")
+		(uuid "c499d3fa-d509-493a-9d64-c1046827febf")
 	)
 	(junction
 		(at 99.06 92.71)
@@ -2305,6 +2299,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "d92535c4-d054-4801-8192-46ba152dc239")
+	)
+	(junction
+		(at 181.61 95.25)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "eb1556f0-e9ea-4dec-9837-4f9c02f33717")
 	)
 	(wire
 		(pts
@@ -2508,7 +2508,7 @@
 	)
 	(wire
 		(pts
-			(xy 137.16 190.5) (xy 139.7 190.5)
+			(xy 135.89 190.5) (xy 138.43 190.5)
 		)
 		(stroke
 			(width 0)
@@ -2528,7 +2528,7 @@
 	)
 	(wire
 		(pts
-			(xy 137.16 165.1) (xy 139.7 165.1)
+			(xy 135.89 165.1) (xy 138.43 165.1)
 		)
 		(stroke
 			(width 0)
@@ -2578,7 +2578,7 @@
 	)
 	(wire
 		(pts
-			(xy 127 190.5) (xy 132.08 190.5)
+			(xy 127 190.5) (xy 130.81 190.5)
 		)
 		(stroke
 			(width 0)
@@ -2648,7 +2648,7 @@
 	)
 	(wire
 		(pts
-			(xy 127 165.1) (xy 132.08 165.1)
+			(xy 127 165.1) (xy 130.81 165.1)
 		)
 		(stroke
 			(width 0)
@@ -2778,7 +2778,7 @@
 	)
 	(wire
 		(pts
-			(xy 181.61 95.25) (xy 194.31 95.25)
+			(xy 181.61 95.25) (xy 189.23 95.25)
 		)
 		(stroke
 			(width 0)
@@ -2916,9 +2916,9 @@
 		)
 		(uuid "fd1a1e79-9ccd-4d07-8dcf-bce7fcdc927c")
 	)
-	(global_label "RX_OUTP"
+	(global_label "RX_INN"
 		(shape output)
-		(at 139.7 190.5 0)
+		(at 138.43 190.5 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -2928,7 +2928,7 @@
 		)
 		(uuid "134739d4-b11f-4eb9-ac46-7762942bd938")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 151.0309 190.5 0)
+			(at 148.1281 190.5 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3014,7 +3014,7 @@
 	)
 	(global_label "ZC_IN"
 		(shape output)
-		(at 194.31 95.25 0)
+		(at 189.23 95.25 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3024,7 +3024,7 @@
 		)
 		(uuid "a0e0c8b5-bf0f-4cd4-bde7-1113846b4ea6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 202.6776 95.25 0)
+			(at 197.5976 95.25 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3038,7 +3038,7 @@
 	)
 	(global_label "RX_INP"
 		(shape output)
-		(at 139.7 165.1 0)
+		(at 138.43 165.1 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3048,7 +3048,7 @@
 		)
 		(uuid "e149a45f-40ff-433e-9687-8295e9bb2638")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 149.3376 165.1 0)
+			(at 148.0676 165.1 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3818,7 +3818,7 @@
 	)
 	(symbol
 		(lib_id "Device:C_Small")
-		(at 134.62 190.5 270)
+		(at 133.35 190.5 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3829,7 +3829,7 @@
 		(fields_autoplaced yes)
 		(uuid "3caaafff-db4a-47c6-aaae-67b58677cb83")
 		(property "Reference" "C6"
-			(at 134.6136 184.15 90)
+			(at 133.3436 184.15 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3839,7 +3839,7 @@
 			)
 		)
 		(property "Value" "1nF"
-			(at 134.6136 186.69 90)
+			(at 133.3436 186.69 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3849,7 +3849,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 134.62 190.5 0)
+			(at 133.35 190.5 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3860,7 +3860,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 134.62 190.5 0)
+			(at 133.35 190.5 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3871,7 +3871,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 134.62 190.5 0)
+			(at 133.35 190.5 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4299,7 +4299,7 @@
 	)
 	(symbol
 		(lib_id "Device:C_Small")
-		(at 134.62 165.1 270)
+		(at 133.35 165.1 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4310,7 +4310,7 @@
 		(fields_autoplaced yes)
 		(uuid "6b18d643-32cd-4def-97ae-aedc3d3798eb")
 		(property "Reference" "C5"
-			(at 134.6136 158.75 90)
+			(at 133.3436 158.75 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4320,7 +4320,7 @@
 			)
 		)
 		(property "Value" "1nF"
-			(at 134.6136 161.29 90)
+			(at 133.3436 161.29 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4330,7 +4330,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 134.62 165.1 0)
+			(at 133.35 165.1 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4341,7 +4341,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 134.62 165.1 0)
+			(at 133.35 165.1 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4352,7 +4352,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 134.62 165.1 0)
+			(at 133.35 165.1 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
