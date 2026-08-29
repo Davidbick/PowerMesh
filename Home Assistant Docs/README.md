@@ -1,10 +1,10 @@
 # Home Assistant
 
-Home Assistant (HA) is an open-source software that will act as the hub to connect with the smart devices.
+Home Assistant (HA) is an open-source software that will act as the hub to connect with the smart devices. We are running HA OS on a microSD card.
 
 ## How it will be implemented
 
-Using the RPI3 of the previous group, a micro SD card housing HA OS will be inserted into the RPI3. The RPI3 will be powered on using a micro USB and an ethernet cable will be connected to the RPI3 and a router. Once everything is connected, powered on, and the configuration is all set, the HA dashboard can be accessed using http://homeassistant.local:8123/ or the HA companion app. Commands will be sent via HA, and the statuses of the smart devices connected will also be sent to HA via the RPI hub. This should be done via using the Matter standard.
+Using the RPI3 of the previous group, a microSD card housing HA OS will be inserted into the RPI3. The RPI3 will be powered on using a micro USB and an ethernet cable will be connected to the RPI3 and a router. Once everything is connected, powered on, and the configuration is all set, the HA dashboard can be accessed using http://homeassistant.local:8123/ or the HA companion app. Commands will be sent via HA, and the statuses of the smart devices connected will also be sent to HA via the RPI hub. This should be done via using the Matter standard.
 
 ## Current bugs
 
