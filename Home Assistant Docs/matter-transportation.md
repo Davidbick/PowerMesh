@@ -9,9 +9,10 @@ There are various ways to transport the Matter payload to the Matter enabled end
 
 ## Option 2: Point to Point Protocol (PPP)
 1. Get Home Assistant on the RPI3 using linux. HA OS would have resitrictions that would make having PPP to automatically frame the Matter payload difficult.
-2. Matter is IPv6. Use PPP to frame those IPv6 packets so that it can be sent serially, like through UART. Can also be used with SPI, but SPI is naturally more difficult.
-3. Use UART to send the Matter payload from the RPI3 to the STM32.
+2. Matter is IPv6. Use PPP to frame those IPv6 packets so that it can be sent serially, like through UART. Can also be used with SPI, but SPI is naturally more difficult. PPP essentially frames the IPv6 packets that contains the Matter payload.
+3. Use UART to send the framed IPv6 packets from the RPI3 to the STM32.
 4. Use UART/SPI to keep transporting everything. Besides the end-device, everything should just be transport.
+5. Since we framed the IPv6 packets, it would have to be deframed somewhere. This would be at the end.
 
 ## Option 3: Ethernet Cable Everything
-1. Simply have all devices have ethernet ports to transport the Matter payload, since Matter commands can be transported using ethernet. Also solves problems with Matter multicast (RPI3 communicating with multiple devices). Makes sure that everything can handle IPv6 and ethernet compatibility.
+1. Simply have all devices have ethernet ports to transport the Matter payload, since Matter commands can be transported using ethernet. Also solves problems with Matter multicast (RPI3 communicating with multiple devices) and discovery (mDNS to announce that the device is back if power goes out). Makes sure that everything can handle IPv6 and ethernet compatibility.
