@@ -45,6 +45,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+static uint8_t rx_byte;
+static const uint8_t ready_msg[] = "UART RX ready\r\n";
 
 /* USER CODE END PV */
 
@@ -91,7 +93,12 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_UART_Transmit(
+    &huart2,
+    (uint8_t *)ready_msg,
+    sizeof(ready_msg) - 1,
+    HAL_MAX_DELAY
+  );
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,13 +108,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-    HAL_Delay(500);
+    if (HAL_UART_Receive(
+            &huart2,
+            &rx_byte,
+            1,
+            HAL_MAX_DELAY
+        ) == HAL_OK)
+    {
+        HAL_UART_Transmit(
+            &huart2,
+            &rx_byte,
+            1,
+            HAL_MAX_DELAY
+        );
 
-    char msg[] = "STM32 Works!!\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-    HAL_Delay(1000);
-
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    }
   }
   /* USER CODE END 3 */
 }
