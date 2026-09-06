@@ -7370,7 +7370,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 259.08 131.318 90)
 			(hide yes)
 			(show_name no)
@@ -7531,7 +7531,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 94.9452 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -7691,7 +7691,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 60.6552 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -7828,7 +7828,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "196306be-ef8a-414c-92b8-c2a3e67cbdb1")
-		(property "Reference" "R?"
+		(property "Reference" "R9"
 			(at 86.36 75.184 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7848,7 +7848,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 86.36 79.248 90)
 			(hide yes)
 			(show_name no)
@@ -7890,7 +7890,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "R?")
+					(reference "R9")
 					(unit 1)
 				)
 			)
@@ -7919,7 +7919,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF"
+		(property "Value" "100n"
 			(at 101.6 74.9362 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7930,7 +7930,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 99.06 73.66 0)
 			(hide yes)
 			(show_name no)
@@ -8010,7 +8010,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:2171790001_MOL_USBC Connector"
 			(at 236.22 104.14 0)
 			(hide yes)
 			(show_name no)
@@ -8182,7 +8182,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "37c9bf2a-8455-452d-9026-3f8dd08f6e5f")
-		(property "Reference" "C?"
+		(property "Reference" "C14"
 			(at 198.12 52.0699 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8204,7 +8204,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 195.2752 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -8246,7 +8246,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "C?")
+					(reference "C14")
 					(unit 1)
 				)
 			)
@@ -8263,7 +8263,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "4cb55866-479f-4c28-911d-09fd51a6dabc")
-		(property "Reference" "SW?"
+		(property "Reference" "SW4"
 			(at 68.58 82.804 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8328,7 +8328,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "SW?")
+					(reference "SW4")
 					(unit 1)
 				)
 			)
@@ -8751,7 +8751,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10pF"
+		(property "Value" "10p"
 			(at 72.39 116.8399 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8762,7 +8762,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 69.5452 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -8833,7 +8833,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10pF"
+		(property "Value" "10p"
 			(at 90.17 116.8399 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8844,7 +8844,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 87.3252 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -9004,7 +9004,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_QFP:LQFP-64_10x10mm_P0.5mm"
+		(property "Footprint" "DigitalBoardLibrary:STM32F446RET6_LQFP64-10x10mm"
 			(at 114.3 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -9251,7 +9251,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "96ab73a3-28d2-42fc-a2a1-b4102feef6e1")
-		(property "Reference" "R?"
+		(property "Reference" "R10"
 			(at 199.39 99.0599 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9273,7 +9273,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 195.072 100.33 90)
 			(hide yes)
 			(show_name no)
@@ -9315,7 +9315,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "R?")
+					(reference "R10")
 					(unit 1)
 				)
 			)
@@ -9434,7 +9434,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 70.8152 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -9494,7 +9494,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "acb2c1bf-c382-4591-a3fd-c93467492205")
-		(property "Reference" "C?"
+		(property "Reference" "C12"
 			(at 154.94 52.0699 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9516,7 +9516,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 152.0952 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -9558,7 +9558,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "C?")
+					(reference "C12")
 					(unit 1)
 				)
 			)
@@ -9598,7 +9598,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 83.5152 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -9815,7 +9815,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b77dea4c-e309-4c0b-a0c8-2ed051ea4779")
-		(property "Reference" "C?"
+		(property "Reference" "C13"
 			(at 170.18 52.0699 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9837,7 +9837,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 167.3352 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -9879,7 +9879,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "C?")
+					(reference "C13")
 					(unit 1)
 				)
 			)
@@ -9994,7 +9994,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:ASV_ABR_24MHz_Crystal Oscillator"
 			(at 77.47 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -10104,7 +10104,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 106.3752 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -10164,7 +10164,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "cd820494-3c4b-475b-87ea-2247fd395a16")
-		(property "Reference" "C?"
+		(property "Reference" "C11"
 			(at 104.14 148.5899 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10175,7 +10175,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "2.2uF"
+		(property "Value" "2.2u"
 			(at 104.14 151.1299 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10186,7 +10186,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 101.2952 153.67 0)
 			(hide yes)
 			(show_name no)
@@ -10228,7 +10228,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "C?")
+					(reference "C11")
 					(unit 1)
 				)
 			)
@@ -10246,7 +10246,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "cdcba648-d3d0-48af-9f9c-7664cc39d2e0")
-		(property "Reference" "FB?"
+		(property "Reference" "FB1"
 			(at 177.7492 40.64 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10308,7 +10308,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/ba7311af-3053-4b06-bf5c-d2742cc73435"
-					(reference "FB?")
+					(reference "FB1")
 					(unit 1)
 				)
 			)
@@ -10348,7 +10348,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 117.8052 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -10430,7 +10430,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "CONN10_SHF_12P7X5P08_SAI"
+		(property "Footprint" "DigitalBoardLibrary:JTAG_CONN10_SHF_12P7X5P08_SAI"
 			(at 203.2 129.54 0)
 			(hide yes)
 			(show_name no)

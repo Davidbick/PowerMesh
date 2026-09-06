@@ -652,14 +652,9 @@
         "filename": "components.kicad_sch",
         "name": "Components",
         "uuid": "bd693732-8b51-47d4-8a47-72497798827e"
-      },
-      {
-        "filename": "stm32_st8500.kicad_sch",
-        "name": "STM32_ST8500",
-        "uuid": "ac3544a7-212a-4d88-99c5-e84883117561"
       }
     ],
-    "used_designators": "#PWR14-15,#PWR26-27,#PWR49-73",
+    "used_designators": "U2,SW4,TP1-2,R9-27,J2-4,D5,C11-16,FB1,#PWR14-15,#PWR26-27,#PWR49-73",
     "variants": []
   },
   "sheets": [
@@ -670,10 +665,6 @@
     [
       "bd693732-8b51-47d4-8a47-72497798827e",
       "Components"
-    ],
-    [
-      "ac3544a7-212a-4d88-99c5-e84883117561",
-      "STM32_ST8500"
     ]
   ],
   "text_variables": {},

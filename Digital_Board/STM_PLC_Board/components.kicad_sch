@@ -7271,7 +7271,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 29.972 96.52 90)
 			(hide yes)
 			(show_name no)
@@ -7486,7 +7486,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "0fa35f2b-5ae8-4bf3-92ca-6f6cb77b128c")
-		(property "Reference" "R?"
+		(property "Reference" "R26"
 			(at 103.632 174.752 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7506,7 +7506,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 107.95 178.308 90)
 			(hide yes)
 			(show_name no)
@@ -7548,7 +7548,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R26")
 					(unit 1)
 				)
 			)
@@ -7676,7 +7676,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 140.462 31.75 90)
 			(hide yes)
 			(show_name no)
@@ -7735,7 +7735,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "176a7f9b-9ed8-449a-a4e4-1640d62253ab")
-		(property "Reference" "R?"
+		(property "Reference" "R12"
 			(at 34.29 54.102 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7755,7 +7755,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 34.29 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -7797,7 +7797,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R12")
 					(unit 1)
 				)
 			)
@@ -7814,7 +7814,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "1859b302-9e2f-4249-be50-91735bf78589")
-		(property "Reference" "TP?"
+		(property "Reference" "TP2"
 			(at 79.248 27.432 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7876,7 +7876,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "TP?")
+					(reference "TP2")
 					(unit 1)
 				)
 			)
@@ -8243,7 +8243,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 209.042 34.29 90)
 			(hide yes)
 			(show_name no)
@@ -8480,7 +8480,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 140.97 94.488 90)
 			(hide yes)
 			(show_name no)
@@ -8562,7 +8562,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 243.332 34.29 90)
 			(hide yes)
 			(show_name no)
@@ -8621,7 +8621,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "39e1b538-b04b-444e-af9d-98d0f7001c28")
-		(property "Reference" "TP?"
+		(property "Reference" "TP1"
 			(at 39.878 27.432 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8683,7 +8683,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "TP?")
+					(reference "TP1")
 					(unit 1)
 				)
 			)
@@ -8793,7 +8793,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "4013835f-80ed-4e7e-95b7-3d308fc461f5")
-		(property "Reference" "R?"
+		(property "Reference" "R24"
 			(at 98.806 140.208 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8813,7 +8813,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 102.87 140.208 90)
 			(hide yes)
 			(show_name no)
@@ -8855,7 +8855,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R24")
 					(unit 1)
 				)
 			)
@@ -9127,7 +9127,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 41.91 112.0648 0)
 			(hide yes)
 			(show_name no)
@@ -9265,7 +9265,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "560b90c4-3ac8-406b-aea6-a0f5f864eedc")
-		(property "Reference" "J?"
+		(property "Reference" "J3"
 			(at 62.23 21.59 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9405,7 +9405,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "J?")
+					(reference "J3")
 					(unit 1)
 				)
 			)
@@ -9422,7 +9422,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "5898e4f0-9168-405c-a37a-11a050d3796c")
-		(property "Reference" "R?"
+		(property "Reference" "R20"
 			(at 70.866 44.45 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9442,7 +9442,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 74.93 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -9484,7 +9484,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R20")
 					(unit 1)
 				)
 			)
@@ -9747,7 +9747,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "5b966553-557f-4e95-821b-c55f2206c7ff")
-		(property "Reference" "C?"
+		(property "Reference" "C16"
 			(at 223.52 105.4099 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9769,7 +9769,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 220.6752 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -9811,7 +9811,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "C?")
+					(reference "C16")
 					(unit 1)
 				)
 			)
@@ -9828,7 +9828,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "5c17e697-d30d-4a5b-9576-a2c34b3ae8f0")
-		(property "Reference" "R?"
+		(property "Reference" "R18"
 			(at 74.93 31.242 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9848,7 +9848,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 74.93 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -9890,7 +9890,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R18")
 					(unit 1)
 				)
 			)
@@ -9907,7 +9907,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "5de0ae64-cb7a-4fc5-b10e-c28ba27a7cf3")
-		(property "Reference" "R?"
+		(property "Reference" "R23"
 			(at 96.266 150.368 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9927,7 +9927,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 100.33 150.368 90)
 			(hide yes)
 			(show_name no)
@@ -9969,7 +9969,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R23")
 					(unit 1)
 				)
 			)
@@ -10143,7 +10143,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "5f7b3c47-1386-4cb1-9b26-a74fa643c232")
-		(property "Reference" "U?"
+		(property "Reference" "U2"
 			(at 198.12 91.44 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10208,7 +10208,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "U?")
+					(reference "U2")
 					(unit 1)
 				)
 			)
@@ -10383,7 +10383,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "72c741e2-9341-47b3-88e8-7b3b2bcaa125")
-		(property "Reference" "J?"
+		(property "Reference" "J2"
 			(at 49.53 149.86 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10475,7 +10475,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "J?")
+					(reference "J2")
 					(unit 1)
 				)
 			)
@@ -10649,7 +10649,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "88917963-1df3-4832-9e72-6aa41715195c")
-		(property "Reference" "R?"
+		(property "Reference" "R14"
 			(at 45.466 39.37 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10669,7 +10669,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 49.53 40.64 0)
 			(hide yes)
 			(show_name no)
@@ -10711,7 +10711,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R14")
 					(unit 1)
 				)
 			)
@@ -10748,7 +10748,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 140.97 108.458 90)
 			(hide yes)
 			(show_name no)
@@ -10807,7 +10807,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "9066f799-1e8e-4ceb-9f25-19a9aba15f2f")
-		(property "Reference" "R?"
+		(property "Reference" "R17"
 			(at 45.974 49.53 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10827,7 +10827,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 49.53 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -10869,7 +10869,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R17")
 					(unit 1)
 				)
 			)
@@ -10886,7 +10886,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "926021c8-4d71-4313-a70b-a7598764e196")
-		(property "Reference" "R?"
+		(property "Reference" "R25"
 			(at 103.632 171.45 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10906,7 +10906,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 107.95 171.958 90)
 			(hide yes)
 			(show_name no)
@@ -10948,7 +10948,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R25")
 					(unit 1)
 				)
 			)
@@ -10966,7 +10966,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "9524cbd6-1061-488d-8f5d-db955816b0a6")
-		(property "Reference" "D?"
+		(property "Reference" "D5"
 			(at 236.5375 90.17 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11039,7 +11039,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "D?")
+					(reference "D5")
 					(unit 1)
 				)
 			)
@@ -11149,7 +11149,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "971453ac-3a31-4ca9-a43b-e74125ed3beb")
-		(property "Reference" "R?"
+		(property "Reference" "R21"
 			(at 70.866 47.244 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11169,7 +11169,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 74.93 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -11211,7 +11211,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R21")
 					(unit 1)
 				)
 			)
@@ -11330,7 +11330,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 174.752 33.02 90)
 			(hide yes)
 			(show_name no)
@@ -11547,7 +11547,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "a97cd436-ff77-4d19-921d-6eabc17156e2")
-		(property "Reference" "R?"
+		(property "Reference" "R22"
 			(at 71.12 49.53 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11567,7 +11567,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 74.93 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -11609,7 +11609,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R22")
 					(unit 1)
 				)
 			)
@@ -11626,7 +11626,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "aa624d7b-0a1f-4ae4-bd99-28f6ed7edfa6")
-		(property "Reference" "R?"
+		(property "Reference" "R11"
 			(at 19.05 49.022 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11646,7 +11646,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 19.05 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -11688,7 +11688,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R11")
 					(unit 1)
 				)
 			)
@@ -11705,7 +11705,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "b63b19fe-5d78-4e47-8fda-4791f0cb350d")
-		(property "Reference" "R?"
+		(property "Reference" "R16"
 			(at 46.228 46.99 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11725,7 +11725,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 49.53 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -11767,7 +11767,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R16")
 					(unit 1)
 				)
 			)
@@ -11784,7 +11784,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "bde3f5bb-6af3-41f3-b8b6-55f338cc2e05")
-		(property "Reference" "R?"
+		(property "Reference" "R13"
 			(at 38.1 57.912 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11804,7 +11804,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 38.1 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -11846,7 +11846,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R13")
 					(unit 1)
 				)
 			)
@@ -12206,7 +12206,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "db9e670b-e14e-4d37-bbec-ae69add5fd31")
-		(property "Reference" "J?"
+		(property "Reference" "J4"
 			(at 124.46 146.05 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12322,7 +12322,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "J?")
+					(reference "J4")
 					(unit 1)
 				)
 			)
@@ -12418,7 +12418,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "e6654fa9-72fc-436b-b3d4-ee7de8e6fb97")
-		(property "Reference" "C?"
+		(property "Reference" "C15"
 			(at 181.61 104.1399 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12440,7 +12440,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 Capacitor SMD"
 			(at 178.7652 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -12482,7 +12482,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "C?")
+					(reference "C15")
 					(unit 1)
 				)
 			)
@@ -12499,7 +12499,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "e6f44dde-13e0-45dc-8aec-4fc0e52c69a9")
-		(property "Reference" "R?"
+		(property "Reference" "R19"
 			(at 71.374 41.91 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12519,7 +12519,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 74.93 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -12561,7 +12561,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R19")
 					(unit 1)
 				)
 			)
@@ -12733,7 +12733,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "eb3185c1-c6e1-4c24-aa9b-764c5384de64")
-		(property "Reference" "R?"
+		(property "Reference" "R27"
 			(at 243.84 104.1399 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12755,7 +12755,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 239.522 105.41 90)
 			(hide yes)
 			(show_name no)
@@ -12797,7 +12797,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R27")
 					(unit 1)
 				)
 			)
@@ -12893,7 +12893,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "fffb3da2-d318-4723-9c4c-55344bed52ec")
-		(property "Reference" "R?"
+		(property "Reference" "R15"
 			(at 45.974 42.418 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12913,7 +12913,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:0805 SMD Resistor"
 			(at 49.53 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -12955,7 +12955,7 @@
 		(instances
 			(project "STM_PLC_Board"
 				(path "/bd693732-8b51-47d4-8a47-72497798827e"
-					(reference "R?")
+					(reference "R15")
 					(unit 1)
 				)
 			)

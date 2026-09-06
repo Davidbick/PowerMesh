@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "DigitalBoardLibrary") (type "KiCad") (uri "/home/bsgursta/ProgrammingProjects/PowerMesh/Digital_Board/Nonlibrary_Components/DigitalBoardLibrary.pretty") (options "") (descr ""))
+)
