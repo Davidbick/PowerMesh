@@ -1,18 +1,25 @@
 # Note
 This file contains information about Home Assistant, how it is used, and how it works with our hardware.
 
-## HA Initialization
+## HA Initialization (old)
 When RPI is ready, enter this in a browser:
 http://homeassistant.local:8123/
 If white screen with HA logo, enter this in a browser:
 http://homeassistant.local:4357
 If everything is green, then the RPI is being bottlenecked due to its limitations. Wait like 20 minutes before entering the other URL into a browser (close all HA instances so that the browsers won't take resources from the RPI).
 
-## Adding Devices
+## Adding Devices (old)
 Adding matter device
 open HA app -> settings -> device & services -> Search and select "Matter" -> use official matter server (box selected) -> scan QR code or hold phone near Matter device -> device should be connected after naming it
 
-## Adding HA OS to a microSD
+## Adding Home Assitant Docker to Raspberry Pi OS x64 (for RPI3) (CURRENT)
+# Getting Raspberry Pi OS on a microSD
+1) Select Device, OS, storage, create an account, and setup localisation
+2) Skip Wi-Fi
+3) Enable SSH
+4) Write to the MicroSD
+
+## Adding HA OS to a microSD (DEPRECATED)
 RPI Micro SD configuration:
 https://www.home-assistant.io/installation/raspberrypi/
 Notes from the link:
@@ -33,6 +40,8 @@ RPI Debugging:
 ## HA Companion App
 Home Assistant Companion App Download & Instructions:
 https://companion.home-assistant.io/docs/getting_started/
+
+Note: This may be for HA OS, and instructions for HA Docker may be different.
 
 ### Misc
 Home Assistant Green:
