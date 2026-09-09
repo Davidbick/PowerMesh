@@ -1,2 +1,3 @@
 # CMake / VS Code build output
 STM32/Projects/powermesh_stm32_bringup/build/
+RaspberryPi/.venv/
