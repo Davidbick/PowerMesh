@@ -6,7 +6,7 @@ TUN_NAME="powermesh0"
 TUN_ADDRESS="fd00:706d::1/64"
 MTU="1280"
 
-USER_NAME="$(id -un)"
+USER_NAME="${SUDO_USER:-$(id -un)}"
 
 echo "Loading TUN driver..."
 sudo modprobe tun
