@@ -12226,7 +12226,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "DigitalBoardLibrary:JTAG_CONN10_SHF_12P7X5P08_SAI"
 			(at 123.19 162.56 0)
 			(hide yes)
 			(show_name no)
