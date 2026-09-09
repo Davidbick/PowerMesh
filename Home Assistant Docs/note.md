@@ -46,6 +46,7 @@ open HA app -> settings -> device & services -> Search and select "Matter" -> us
 9. sudo docker compose ps
 10. The previous command should show that HA is running. If there is a message about Bluetooth, ignore it.
 11. In a broswer, type in "http://\<RPI3_ADDRESS>:8123". You can use "hostname -I" to find the address in the SSHed terminal, which should be the first one.
+12. Use "sudo shutdown -h now" to turn off the Pi when shutting it down.
 
 # Getting Matter Server (run these commands and follow instructions)
 1. mkdir -p ~/homeassistant/matter-server
@@ -58,7 +59,7 @@ open HA app -> settings -> device & services -> Search and select "Matter" -> us
 8. sudo docker compose logs -f
 9. Previous command shows logs for the matter server. Do (ctrl + c) to exit logs.
 10. sudo docker logs matterjs-server
-11. If the previous command show that the matter server is failing due to "EACCESS: permission denied" do the following:
+11. If the previous command show that the matter server is failing due to "EACCESS: permission denied" do the following (or skip to 18):
 12. cd ~/homeassistant/matter-server
 13. sudo docker compose down
 14. ls -ld ~/homeassistant/matter-server/data
@@ -75,7 +76,7 @@ open HA app -> settings -> device & services -> Search and select "Matter" -> us
 1. Open HA
 2. Settings -> Devices & services -> Add integration
 3. Search and click the ones that says "Matter" and wait for it to finish.
-4. To be continued
+4. For the url, put "ws://localhost:5580/ws".
 
 # Debugging
 1. No username
