@@ -139,3 +139,18 @@ Pull the latest PowerMesh code:
 cd ~/PowerMesh
 git pull --ff-only
 ```
+
+## Current Status
+
+PowerMesh currently supports:
+
+```text
+Matter Server / Linux IPv6
+        ↓
+powermesh0 TUN
+        ↓
+Python TUN-UART bridge
+        ↓
+STM32
+        ↓
+UART ACK
