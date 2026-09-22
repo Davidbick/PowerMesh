@@ -81,6 +81,7 @@ open HA app -> settings -> device & services -> Search and select "Matter" -> us
 # Debugging
 1. No username
 If there is no username, it should default to "pi".
+For our current project, the username is "powermesh".
 2. SSH not responding (please read fully)
 In a terminal such as Powershell, do "arp -a". The address should start as 192.168. It could also be something different.
 Try to SSH into each one with "ssh \<USERNAME>@\<ADDRESS>".

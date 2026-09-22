@@ -1,8 +1,13 @@
 # ESP32 Testing
-
 Used to test the Matter transport to see if a Matter endpoint receives the payload correctly.
 
 Currently only supports ESP32-S3 DevKitC-1 v1.1 with the WROOM2 N32R16V
+Using ESP IDF 5.5.5 and ESP Matter 1.6.0
+
+Due to the various issues regarding dependency (of ESP IDF and ESP Matter), problems with commissioning, and menuconfig acting strange, an already made Matter light with the ESP32 S3 will be used to test if possible.
+
+## Current Issues
+1. Commissioning fails, so the device is not added to Home Assistant. It is unknown whether it is the ESP32 causing the problem or the Matter server/integration on the RPI.
 
 ## Current Progress
 1. Creates the Matter endpoint

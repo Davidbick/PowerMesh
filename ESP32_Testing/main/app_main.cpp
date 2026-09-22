@@ -7,7 +7,7 @@
 #include "esp_matter.h"
 #include "esp_matter_endpoint.h"
 
-#include <app/server/OnboardingCodesUtil.h>
+#include <setup_payload/OnboardingCodesUtil.h>
 
 // ESP-IDF LED strip component
 #include "led_strip.h"
@@ -381,8 +381,45 @@ static void app_event_cb(
     const ChipDeviceEvent *event,
     intptr_t arg)
 {
-}
+    if (event == nullptr) {
+        return;
+    }
 
+    switch (event->Type) {
+
+        case chip::DeviceLayer::DeviceEventType::kCommissioningSessionStarted:
+            ESP_LOGI(TAG, "=== COMMISSIONING SESSION STARTED ===");
+            break;
+
+        case chip::DeviceLayer::DeviceEventType::kCommissioningComplete:
+            ESP_LOGI(TAG, "=== COMMISSIONING COMPLETE ===");
+            break;
+
+        case chip::DeviceLayer::DeviceEventType::kCommissioningSessionStopped:
+            ESP_LOGI(TAG, "=== COMMISSIONING SESSION STOPPED ===");
+            break;
+
+        case chip::DeviceLayer::DeviceEventType::kCommissioningWindowOpened:
+            ESP_LOGI(TAG, "=== COMMISSIONING WINDOW OPENED ===");
+            break;
+
+        case chip::DeviceLayer::DeviceEventType::kCommissioningWindowClosed:
+            ESP_LOGI(TAG, "=== COMMISSIONING WINDOW CLOSED ===");
+            break;
+
+        case chip::DeviceLayer::DeviceEventType::kFailSafeTimerExpired:
+            ESP_LOGE(TAG, "=== FAILSAFE TIMER EXPIRED ===");
+            break;
+
+        case chip::DeviceLayer::DeviceEventType::kInterfaceIpAddressChanged:
+            ESP_LOGI(TAG, "=== IP ADDRESS CHANGED ===");
+            break;
+
+        default:
+            ESP_LOGI(TAG, "Matter event: %d", event->Type);
+            break;
+    }
+}
 
 // ============================================================================
 // Main
@@ -435,19 +472,15 @@ extern "C" void app_main()
     // Initial brightness
     light_config.level_control.current_level = 254;
 
-    // Initial Hue
-    light_config.color_control.current_hue = 0;
-
-    // Initial Saturation
-    light_config.color_control.current_saturation = 0;
-
-    // Color mode = HSV
+    // Color mode = Hue + Saturation
     light_config.color_control.color_mode =
-        (uint8_t)chip::app::Clusters::ColorControl::ColorMode::kCurrentHueAndCurrentSaturation;
+        (uint8_t)chip::app::Clusters::ColorControl::ColorModeEnum::
+            kCurrentHueAndCurrentSaturation;
 
+    // Enhanced color mode = Hue + Saturation
     light_config.color_control.enhanced_color_mode =
-        (uint8_t)chip::app::Clusters::ColorControl::ColorMode::kCurrentHueAndCurrentSaturation;
-
+        (uint8_t)chip::app::Clusters::ColorControl::EnhancedColorModeEnum::
+            kCurrentHueAndCurrentSaturation;
 
     esp_matter::endpoint_t *endpoint =
         esp_matter::endpoint::extended_color_light::create(
