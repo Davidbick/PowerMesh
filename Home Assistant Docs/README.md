@@ -1,0 +1,23 @@
+# Home Assistant
+
+Home Assistant (HA) is an open-source software that will act as the hub to connect with the smart devices. We have Raspberry Pi OS x64 for the RPI3 on our microSD. From the RPI OS, we have a HA Docker.
+
+## How it will be implemented
+
+Using the RPI3 of the previous group, a microSD card housing HA Docker using RPI OS will be inserted into the RPI3. The RPI3 will be powered on using a micro USB and an ethernet cable will be connected to the RPI3 and a router. Once everything is connected, powered on, and the configuration is all set, the HA dashboard can be accessed. Commands will be sent via HA, and the statuses of the smart devices connected will also be sent to HA via the RPI hub. This should be done via using the Matter standard.
+
+## Current bugs
+
+- MicroSD we are using might be degrading. It was having write problems when trying to install RPI OS x64.
+
+## Work completed
+
+- Able to send a command from HA to a Matter-enabled smart bulb, which changed its color (Matter over Wi-Fi)
+- Migration to RPI OS x64
+- Design of Matter transportation
+
+## Planned work
+
+- Make RPI3 send the command out through UART instead of Wi-Fi (might have to disable Bluetooth, which might cause a problem for comissioning new Matter-enabled smart devices on to HA)
+- Connect the RPI3 and STM32 via SPI so that the RPI3 sends the command to the STM32
+- Get a ESP32 S3 dev kit that has enough RAM to store the Matter SDK via esp-matter. This will act as a DIY Matter-enabled smart bulb. Turn off wireless capabilities except Bluetooth (used for comissioning new smart devices). Test if Matter commands can control the RGB LED on it via PWM
