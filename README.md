@@ -34,3 +34,12 @@ Our user interacts with Home Assistant which transfers the commands via the ST85
 - Home Assistant TUN interface
 - PCB Digital Designs
 - PCB Analog Designs
+
+# Build Instructions
+- Install Home Assistant OS on RaspberryPi, and connect GPIO pins to the appropriate serial protocol
+- Use local address of Home Assistant server to visit Webpage and control added Home Assistant devices
+
+# List of Known Bugs:
+- PLC functionality has yet to be thoroughly tested with other components which will be a large endeavor
+- The TUN interface and the Raspberry Pi-to-STM32 bridge currently require manual startup after the Raspberry Pi boots.
+- STM32-to-ST8500 communication has not yet been integrated into the PowerMesh packet path.
