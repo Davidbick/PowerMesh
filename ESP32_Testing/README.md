@@ -6,7 +6,11 @@ Currently only supports ESP32-S3 DevKitC-1 v1.1 with the WROOM2 N32R16V. However
 Using ESP IDF 6.0.2 and ESP Matter 1.6.0 in a WSL environment. Some changes to the RPI might have to be made, such as enabling testing DCL to be true or something along those lines. It is not recommened to use the ESP32 extension for VSCode due to errors and the time it takes for the build process.
 
 This is the QR code needed for commissioning. Manual pairing does not work or is unintuitive.
+
 ![alt text](image.png)
+
+
+This example is exactly the same as the light example is esp-matter, except that it uses the ESP32s3.
 
 ## Current Issues
 1. Pressing the reset button or holding the boot button for commissioning seems buggy. It is best to use the serial monitor and repeatedly close/open it for commissioning or for testing BLE.
