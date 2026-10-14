@@ -1,45 +1,26 @@
-#!/usr/bin/env bash
 
+#!/usr/bin/env bash
 set -euo pipefail
 
 TUN_NAME="powermesh0"
 TUN_ADDRESS="fd00:706d::1/64"
-MTU="1280"
+REMOTE_TEST_ADDRESS="fd00:706d::2"
+MTU=1280
 
-USER_NAME="${SUDO_USER:-$(id -un)}"
-
-echo "Loading TUN driver..."
-sudo modprobe tun
-
-if ! ip link show "$TUN_NAME" >/dev/null 2>&1; then
-    echo "Creating $TUN_NAME..."
-    sudo ip tuntap add \
-        dev "$TUN_NAME" \
-        mode tun \
-        user "$USER_NAME"
-else
-    echo "$TUN_NAME already exists"
+if (( EUID != 0 )); then
+  echo "Run this script as root (the PowerMesh service does this automatically)." >&2
+  exit 1
 fi
 
-echo "Setting MTU to $MTU..."
-sudo ip link set \
-    dev "$TUN_NAME" \
-    mtu "$MTU"
+modprobe tun
 
-echo "Assigning IPv6 address $TUN_ADDRESS..."
-sudo ip -6 addr replace \
-    "$TUN_ADDRESS" \
-    dev "$TUN_NAME"
+if ! ip link show dev "$TUN_NAME" >/dev/null 2>&1; then
+  ip tuntap add dev "$TUN_NAME" mode tun
+fi
 
-echo "Bringing $TUN_NAME up..."
-sudo ip link set \
-    dev "$TUN_NAME" \
-    up
+ip link set dev "$TUN_NAME" mtu "$MTU"
+ip -6 addr replace "$TUN_ADDRESS" dev "$TUN_NAME"
+ip link set dev "$TUN_NAME" up
 
-echo
-echo "PowerMesh TUN interface:"
-ip -6 addr show dev "$TUN_NAME"
-
-echo
-echo "Route test for remote PowerMesh node:"
-ip -6 route get fd00:706d::2
+echo "PowerMesh TUN configured: $TUN_NAME ($TUN_ADDRESS, MTU $MTU)"
+ip -6 route get "$REMOTE_TEST_ADDRESS"
