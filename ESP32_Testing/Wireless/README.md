@@ -22,7 +22,20 @@ This is the QR code needed for commissioning:
 This example is exactly the same as the light example in esp-matter, except that it uses the ESP32s3.
 
 ## Current Issues
-1. Pressing the reset button or holding the boot button for commissioning seems buggy. It is best to use the serial monitor and repeatedly close/open it for commissioning or for testing BLE. In addition, use a nRF Connect to check if the BLE is being broadcasted while opening/closing the serial monitor. The ESP32 should be repeatedly broadcasted.
+1. Pressing the reset button or holding the boot button for commissioning seems buggy. It is best to use the serial monitor and repeatedly close/open it for commissioning or for testing BLE.
+
+To close monitor (hold Ctrl and press the right bracket ]):
+```bash
+Ctrl + ]
+```
+
+To reopen monitor (replace `/dev/ttyUSB0` with your actual port):
+```bash
+cd "$ESP_MATTER_PATH/examples/light"
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+In addition, use a nRF Connect to check if the BLE is being broadcasted while opening/closing the serial monitor. The ESP32 should be repeatedly broadcasted.
 
 ## Current Progress (Wireless)
 1. Creates the Matter endpoint
