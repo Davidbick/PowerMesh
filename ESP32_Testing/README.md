@@ -1,33 +1,55 @@
-# ESP32 Testing
-Used to test the Matter transport to see if a Matter endpoint receives the payload correctly.
+# Testing Environment
 
-Currently only supports ESP32-S3 DevKitC-1 v1.1 with the WROOM2 N32R16V
-Using ESP IDF 5.5.5 and ESP Matter 1.6.0
+Clone ESP-IDF 6.0.2 and ESP Matter 1.6.0 in a WSL environment. Please install the necessary dependencies and applications to build and flash the project.
 
-Due to the various issues regarding dependency (of ESP IDF and ESP Matter), problems with commissioning, and menuconfig acting strange, an already made Matter light with the ESP32 S3 will be used to test if possible.
+Directory Structure:
 
-## Current Issues
-1. Commissioning fails, so the device is not added to Home Assistant. It is unknown whether it is the ESP32 causing the problem or the Matter server/integration on the RPI.
+~/esp
 
-## Current Progress
-1. Creates the Matter endpoint
-2. Has commissioning
-3. Has different functionalites for the Matter device, such as turning in on, changing colors, etc.
-4. State of the light should be reflected
+~/esp/esp-idf
 
-## To-do
-### Operation with Wi-Fi (To be completed first)
-1. Verify that commissioning works properly (must connect to Home Assistant)
-2. Verify that endpoint can be seen
-3. Verify that updating the main program doesn't ruin the commissioning if it is already done
-4. Verify that features such as turning on/off light and changing colors work
-5. Verify if the state change is reflected on the Home Assistant card
+~/esp/esp-matter
 
-### Without Wi-Fi (WIRED)
-1. Enable UART functionality
-2. De-frame the custom frame of the IPv6 packets
-3. Have Matter take in the de-framed packets
-4. Go through all functionality tests (1-5) from Operation with Wi-Fi, except this time it is wired
+### Building and Flashing
+Activating the ESP-IDF version
+```bash
+cd ~/esp/esp-idf
+source ./export.sh
+```
 
-### Tests Completed
-1. None
+Setting Matter path:
+```bash
+cd ~/esp/esp-matter
+source ./export.sh
+```
+
+Building commands (change esp32s3 to whatever ESP32 you are using). Make sure to go to the Wired or Wireless folders and read the README to select the correct ESP32 model being used.
+```bash
+cd ~/esp/esp-matter/examples/light
+idf.py set-target esp32s3
+idf.py build
+```
+
+To flash, install `usbipd-win` which is used to pass USB devices to WSL. After installation is complete, open PowerShell as an administrator and run `usbipd list`. Look for the ESP32 or USB Serial Device and notice its `BUSID`.
+
+Enter this command while replacing `YOUR-BUSID` with your corresponding ESP32 `BUSID`. It may say that it is already shared, which is fine.
+```bash
+usbipd bind --busid YOUR-BUSID
+```
+
+In a **regular** PowerShell window, enter this command while replacing `YOUR-BUSID` with your corresponding ESP32 `BUSID`.
+```bash
+usbipd attach --wsl --busid YOUR-BUSID
+```
+
+Any PowerShell windows are not needed anymore. Go back to WSL and enter `ls -l /dev/ttyUSB* /dev/ttyACM* 2>/dev/null`. This should display the ESP32 port.
+
+Enter this command while replacing `/dev/ttyUSB0` with your actual port.
+```bash
+cd "$ESP_MATTER_PATH/examples/light"
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+The ESP32 should now be flashed and the serial monitor should appear. If the ESP32 has not yet been commissioned, go to the Wired or Wireless and scan the QR code using the Home Assistant Companion App. Both Wireless and Wired contain troubleshooting methods for commissioning.
+
+If the ESP32 has already been commissioned by you, it may not be necessary to recommission it. To check, look at the monitor and check if the last printed messages mentions about the ESP32 being broadcasted. Another way to check would be to open Home Assistant dashboard.
