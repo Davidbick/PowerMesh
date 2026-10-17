@@ -24,7 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
+#include "uart_frame.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +45,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+static uart_frame_t rx_frame;
+static uint8_t ack_status = 0U;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,7 +92,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,13 +101,21 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-    HAL_Delay(500);
+     if (uart_frame_receive(&huart2, &rx_frame) == HAL_OK)
+    {
+        if (rx_frame.type == UART_FRAME_TYPE_DATA)
+        {
+            HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
-    char msg[] = "STM32 Works!!\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-    HAL_Delay(1000);
-
+            uart_frame_send(
+                &huart2,
+                UART_FRAME_TYPE_ACK,
+                rx_frame.sequence,
+                &ack_status,
+                sizeof(ack_status)
+            );
+        }
+    }
   }
   /* USER CODE END 3 */
 }
