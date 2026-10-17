@@ -1,18 +1,7 @@
 # ESP32 Testing (Wired)
-Used to test the Matter transport to see if a Matter endpoint receives a wired payload correctly.
-
-Currently supports ESP32-S3 DevKitC-1 v1.1. However, by changing the first of the if-elseif-statements "set" in the CMakeLists to your ESP32, it should use the sdkconfig for your ESP32.
-
-```bash
-if(NOT DEFINED ENV{ESP_MATTER_DEVICE_PATH})
-    if("${IDF_TARGET}" STREQUAL "esp32" OR "${IDF_TARGET}" STREQUAL "")
-        set(ENV{ESP_MATTER_DEVICE_PATH} $ENV{ESP_MATTER_PATH}/device_hal/device/esp32s3_devkit_c) # Change here!
-    elseif("${IDF_TARGET}" STREQUAL "esp32c3")
-```
+Used to test the Matter transport to see if a Matter endpoint receives a wired payload correctly. Currently being tested on a ESP32S3.
 
 Using ESP IDF 6.0.2 and ESP Matter 1.6.0 in a WSL environment. Please install the necessary dependencies and applications to build and flash the project.
-
-It is not recommended to use the ESP32 extension for VSCode due to errors and the time it takes for the build process.
 
 This is the QR code needed for commissioning:
 
@@ -33,6 +22,35 @@ idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
 In addition, use a nRF Connect to check if the BLE is being broadcasted while opening/closing the serial monitor. The ESP32 should be repeatedly broadcasted.
+
+### Matter Command Processing
+The Matter controller (Raspberry Pi) will send the ESP32 customed framed IPv6 packets over a linux network tunnel addressed to the ESP32. When it reaches the ESP32, the packets must be deframed and processed. 
+
+### sdkconfig Changes
+There are no changes currently compared to the wireless version.
+
+### Wiring
+On the front silkscreen, 17 is TX while 18 will be RX. Connect these pins to the corresponding pins of the STM32 (if testing full PLC) or Raspberry Pi (if testing if code works).
+
+### Building and Flashing
+Activating the ESP-IDF version
+```bash
+cd ~/esp/esp-idf
+source ./export.sh
+```
+
+Setting Matter path:
+```bash
+cd ~/esp/esp-matter
+source ./export.sh
+```
+
+Building commands. Make sure to go to the Wired or Wireless folders and read the README to select the correct ESP32 model being used.
+```bash
+cd ~/esp/esp-matter/examples/plc_light_endpoint
+idf.py set-target esp32s3
+idf.py build
+```
 
 ## To-do
 ### Without Wi-Fi (WIRED)
