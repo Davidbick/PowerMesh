@@ -27,6 +27,13 @@
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
 
+
+
+#include "uart_frame.h"
+#include "driver/uart.h"
+
+
+
 #ifdef CONFIG_ENABLE_SET_CERT_DECLARATION_API
 #include <esp_matter_providers.h>
 #include <lib/support/Span.h>
@@ -163,6 +170,58 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
     return err;
 }
 
+// UART TESTING ==============================
+constexpr int UART_PORT = UART_NUM_1;
+constexpr int UART_TX_GPIO = 17;
+constexpr int UART_RX_GPIO = 18;
+
+static void uart_frame_received(
+    uint8_t frame_type,
+    uint16_t sequence,
+    const uint8_t *payload,
+    size_t length,
+    void *context)
+{
+    (void)payload;
+    (void)context;
+
+    if (frame_type == UART_FRAME_TYPE_ACK) {
+        ESP_LOGI(TAG, "Received ACK: seq=%u", (unsigned)sequence);
+        return;
+    }
+
+    if (frame_type == UART_FRAME_TYPE_DATA) {
+        ESP_LOGI(
+            TAG,
+            "Received DATA: seq=%u len=%u",
+            (unsigned)sequence,
+            (unsigned)length
+        );
+
+        // Send an empty ACK using the received sequence number.
+        esp_err_t err = uart_frame_send(
+            UART_FRAME_TYPE_ACK,
+            sequence,
+            nullptr,
+            0
+        );
+
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Sent ACK: seq=%u", (unsigned)sequence);
+        } else {
+            ESP_LOGE(
+                TAG,
+                "Failed to send ACK: %s",
+                esp_err_to_name(err)
+            );
+        }
+
+        // TODO: Pass DATA payloads to IPv6 processing later.
+    }
+}
+// ==========================================
+
+
 extern "C" void app_main()
 {
     esp_err_t err = ESP_OK;
@@ -248,6 +307,37 @@ extern "C" void app_main()
 
     /* Starting driver with default values */
     app_driver_light_set_defaults(light_endpoint_id);
+
+
+    // UART TESTING ==============================
+    constexpr int UART_PORT = UART_NUM_1;
+    constexpr int UART_TX_GPIO = 17;
+    constexpr int UART_RX_GPIO = 18;
+
+    err = uart_frame_uart_start(
+        UART_PORT,
+        UART_TX_GPIO,
+        UART_RX_GPIO
+    );
+
+    ABORT_APP_ON_FAILURE(
+        err == ESP_OK,
+        ESP_LOGE(TAG, "Failed to initialize UART")
+    );
+
+    err = uart_frame_parser_start(
+        uart_frame_received,
+        nullptr
+    );
+
+    ABORT_APP_ON_FAILURE(
+        err == ESP_OK,
+        ESP_LOGE(TAG, "Failed to start UART parser")
+    );
+
+    ESP_LOGI(TAG, "UART frame testing initialized");
+    // ===========================================
+
 
 #if CONFIG_ENABLE_ENCRYPTED_OTA
     err = esp_matter_ota_requestor_encrypted_init(s_decryption_key, s_decryption_key_len);

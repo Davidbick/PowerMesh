@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP SSK04-FPH-254-B6
+D 2.54 mm Female Header, 2 x 6 Pin, Straight, PA6T, Gold Flash, Rectangular Connector
+K
+F https://www.sameskydevices.com/product/resource/ssk04-fph-254.pdf
+$ENDCMP
+#
+#End Doc Library
