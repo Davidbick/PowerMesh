@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Used to test the UART functionality of the ESP32 S3 before testing
-# it with the TUN. Also tests the our custom framing protocol.
-
 import argparse
 import ipaddress
 import serial
@@ -20,11 +17,11 @@ def make_test_ipv6_packet():
     header[7] = 64          # Hop limit
 
     header[8:24] = ipaddress.IPv6Address(
-        "fd42:706f:7765::1"
+        "fd00:706d::1"
     ).packed
 
     header[24:40] = ipaddress.IPv6Address(
-        "fd42:706f:7765::2"
+        "fd00:706d::2"
     ).packed
 
     return bytes(header)
@@ -43,6 +40,9 @@ def main():
         packet,
     )
 
+    print("IPv6 source: fd00:706d::1")
+    print("IPv6 destination: fd00:706d::2")
+
     with serial.Serial(args.port, 115200, timeout=1) as port:
         port.write(frame)
         port.flush()
@@ -53,3 +53,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
