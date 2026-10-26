@@ -1,11 +1,3 @@
-/*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_mac.h>
@@ -29,8 +21,16 @@
 
 
 
+#include <platform/CHIPDeviceLayer.h>
+
+#include <inet/InetInterface.h>
+#include <inet/IPAddress.h>
+#include <string.h>
+
 #include "uart_frame.h"
+#include "uart_ipv6_netif.h"
 #include "driver/uart.h"
+#include "uart_ipv6_udp_test.h"
 
 
 
@@ -170,11 +170,7 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
     return err;
 }
 
-// UART TESTING ==============================
-constexpr int UART_PORT = UART_NUM_1;
-constexpr int UART_TX_GPIO = 17;
-constexpr int UART_RX_GPIO = 18;
-
+// UART / IPv6 testing =======================
 static void uart_frame_received(
     uint8_t frame_type,
     uint16_t sequence,
@@ -182,7 +178,6 @@ static void uart_frame_received(
     size_t length,
     void *context)
 {
-    (void)payload;
     (void)context;
 
     if (frame_type == UART_FRAME_TYPE_ACK) {
@@ -198,29 +193,140 @@ static void uart_frame_received(
             (unsigned)length
         );
 
-        // Send an empty ACK using the received sequence number.
-        esp_err_t err = uart_frame_send(
-            UART_FRAME_TYPE_ACK,
-            sequence,
-            nullptr,
-            0
-        );
-
-        if (err == ESP_OK) {
-            ESP_LOGI(TAG, "Sent ACK: seq=%u", (unsigned)sequence);
+        esp_err_t input_err = uart_ipv6_netif_input(payload, length);
+        if (input_err == ESP_OK) {
+            ESP_LOGI(TAG, "Queued DATA seq=%u into lwIP", (unsigned)sequence);
         } else {
-            ESP_LOGE(
-                TAG,
-                "Failed to send ACK: %s",
-                esp_err_to_name(err)
-            );
+            ESP_LOGW(TAG,
+                     "Could not pass DATA seq=%u to lwIP: %s",
+                     (unsigned)sequence,
+                     esp_err_to_name(input_err));
         }
-
-        // TODO: Pass DATA payloads to IPv6 processing later.
     }
 }
 // ==========================================
 
+/*
+ * Diagnostic only: enumerate interfaces using CHIP's Inet API, rather than
+ * inspecting lwIP directly. Run after uart_ipv6_netif_start() has added uaN.
+ */
+static void log_chip_inet_interfaces(void)
+{
+    ESP_LOGI(TAG, "========== CHIP Inet interface diagnostic ==========");
+
+    unsigned int interface_count = 0;
+    bool found_uart_interface = false;
+    bool uart_interface_up = false;
+    bool uart_interface_multicast = false;
+
+    chip::Inet::InterfaceIterator interfaces;
+    for (; interfaces.HasCurrent(); interfaces.Next()) {
+        char interface_name[chip::Inet::InterfaceId::kMaxIfNameLength] = {};
+        CHIP_ERROR name_error = interfaces.GetInterfaceName(
+            interface_name, sizeof(interface_name));
+
+        if (name_error != CHIP_NO_ERROR) {
+            ESP_LOGW(TAG, "CHIP Inet: failed to read interface name");
+            continue;
+        }
+
+        const bool is_up = interfaces.IsUp();
+        const bool supports_multicast = interfaces.SupportsMulticast();
+
+        ESP_LOGI(TAG,
+                 "CHIP interface[%u]: name=%s up=%s multicast=%s",
+                 interface_count,
+                 interface_name,
+                 is_up ? "yes" : "no",
+                 supports_multicast ? "yes" : "no");
+        interface_count++;
+
+        // lwIP formats this interface as uaN, e.g. ua0.
+        if (interface_name[0] == 'u' && interface_name[1] == 'a') {
+            found_uart_interface = true;
+            uart_interface_up = is_up;
+            uart_interface_multicast = supports_multicast;
+        }
+    }
+
+    if (interface_count == 0) {
+        ESP_LOGE(TAG, "CHIP Inet iterator found no network interfaces");
+    }
+
+    if (!found_uart_interface) {
+        ESP_LOGE(TAG, "FAIL: CHIP Inet iterator does not see the UART netif (uaN)");
+    } else {
+        ESP_LOGI(TAG,
+                 "UART netif visibility: found=yes up=%s multicast=%s",
+                 uart_interface_up ? "yes" : "no",
+                 uart_interface_multicast ? "yes" : "no");
+
+        if (!uart_interface_up) {
+            ESP_LOGE(TAG, "FAIL: CHIP sees the UART netif, but it is not up");
+        }
+        if (!uart_interface_multicast) {
+            ESP_LOGW(TAG,
+                     "WARNING: CHIP reports no multicast support on the UART netif; "
+                     "Matter discovery may not use it");
+        }
+    }
+
+    unsigned int address_count = 0;
+    bool found_uart_link_local = false;
+    bool found_uart_ula = false;
+
+    chip::Inet::InterfaceAddressIterator addresses;
+    for (; addresses.HasCurrent(); addresses.Next()) {
+        char interface_name[chip::Inet::InterfaceId::kMaxIfNameLength] = {};
+        CHIP_ERROR name_error = addresses.GetInterfaceName(
+            interface_name, sizeof(interface_name));
+        if (name_error != CHIP_NO_ERROR) {
+            ESP_LOGW(TAG, "CHIP Inet: failed to read interface name for address");
+            continue;
+        }
+
+        chip::Inet::IPAddress address;
+        CHIP_ERROR address_error = addresses.GetAddress(address);
+        if (address_error != CHIP_NO_ERROR) {
+            ESP_LOGW(TAG, "CHIP Inet: failed to read address on %s", interface_name);
+            continue;
+        }
+
+        char address_text[chip::Inet::IPAddress::kMaxStringLength] = {};
+        if (address.ToString(address_text, sizeof(address_text)) == nullptr) {
+            ESP_LOGW(TAG, "CHIP Inet: failed to format address on %s", interface_name);
+            continue;
+        }
+
+        const bool is_up = addresses.IsUp();
+        const bool supports_multicast = addresses.SupportsMulticast();
+
+        ESP_LOGI(TAG,
+                 "CHIP address[%u]: %s on %s up=%s multicast=%s",
+                 address_count,
+                 address_text,
+                 interface_name,
+                 is_up ? "yes" : "no",
+                 supports_multicast ? "yes" : "no");
+        address_count++;
+
+        if (interface_name[0] == 'u' && interface_name[1] == 'a') {
+            if (strcmp(address_text, "fe80::2") == 0) {
+                found_uart_link_local = true;
+            }
+            if (strcmp(address_text, "fd00:706d::2") == 0) {
+                found_uart_ula = true;
+            }
+        }
+    }
+
+    ESP_LOGI(TAG,
+             "CHIP Inet diagnostic result: uaN=%s fe80::2=%s fd00:706d::2=%s",
+             found_uart_interface ? "FOUND" : "MISSING",
+             found_uart_link_local ? "FOUND" : "MISSING",
+             found_uart_ula ? "FOUND" : "MISSING");
+    ESP_LOGI(TAG, "========== end CHIP Inet diagnostic ==========");
+}
 
 extern "C" void app_main()
 {
@@ -325,6 +431,27 @@ extern "C" void app_main()
         ESP_LOGE(TAG, "Failed to initialize UART")
     );
 
+    err = uart_ipv6_netif_start();
+    ABORT_APP_ON_FAILURE(
+        err == ESP_OK,
+        ESP_LOGE(TAG, "Failed to start UART IPv6 lwIP netif: %s", esp_err_to_name(err))
+    );
+
+    // Request Matter DNS-SD to refresh after adding the UART IPv6 interface.
+    chip::DeviceLayer::ChipDeviceEvent dnssd_restart_event{};
+    dnssd_restart_event.Type =
+        chip::DeviceLayer::DeviceEventType::kDnssdRestartNeeded;
+    CHIP_ERROR post_err =
+        chip::DeviceLayer::PlatformMgr().PostEvent(&dnssd_restart_event);
+    if (post_err != CHIP_NO_ERROR) {
+        ESP_LOGE(TAG, "Failed to request Matter DNS-SD restart: %" CHIP_ERROR_FORMAT, post_err.Format());
+    } else {
+        ESP_LOGI(TAG, "Requested Matter DNS-SD restart after UART netif init");
+    }
+
+    // Diagnostic: check whether CHIP's Inet layer sees the custom netif.
+    log_chip_inet_interfaces();
+
     err = uart_frame_parser_start(
         uart_frame_received,
         nullptr
@@ -335,7 +462,14 @@ extern "C" void app_main()
         ESP_LOGE(TAG, "Failed to start UART parser")
     );
 
-    ESP_LOGI(TAG, "UART frame testing initialized");
+    err = uart_ipv6_udp_test_start();
+
+    ABORT_APP_ON_FAILURE(
+        err == ESP_OK,
+        ESP_LOGE(TAG, "Failed to start IPv6 UDP test receiver")
+    );
+
+    ESP_LOGI(TAG, "UART frame + raw IPv6 lwIP input initialized");
     // ===========================================
 
 
