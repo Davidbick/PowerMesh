@@ -77,3 +77,9 @@ uart_ipv6_udp_test: UDP TEST PASSED: received HELLO FROM PI
 ```
 
 If everything displayed correctly, Matter integration with the custom network interface can proceed.
+
+### Additional Notes
+The callback will be happening over Wi-Fi, so the whole pipeline will not be entirely wireless. It is assumed that whatever Pi can do a callback using Wi-Fi if it can successfully use the Wireless example. The address back to the original sender (the RPI) is simply the the address that is used to SSH into the RPI. In our case, it is a global address, but it should also potentially work with a local address for the RPI.
+
+If the transmission between the RPI to ESP32 works wire, it is believed that it can also be wired from the ESP32 to RPI through some effort.
+
