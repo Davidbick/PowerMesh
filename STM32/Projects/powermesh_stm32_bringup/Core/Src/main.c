@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "powermesh_board.h"
 #include "uart_transport.h"
+#include "packet_router.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,8 +49,11 @@
 
 /* USER CODE BEGIN PV */
 static uart_transport_t pi_transport;
-static const uint8_t ack_status = 0U;
-static volatile uint32_t ack_enqueue_failures = 0U;
+static uart_transport_t remote_transport;
+static packet_router_t router;
+
+static packet_port_t pi_port = PACKET_PORT_GATEWAY;
+static packet_port_t remote_port = PACKET_PORT_REMOTE;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,30 +64,46 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static void on_pi_frame(const uart_frame_t *frame, void *context)
+// Adapt the shared router interface to the F4 HAL UART transport.
+static bool send_uart_frame(
+    void *context,
+    uint8_t type,
+    uint16_t sequence,
+    const uint8_t *payload,
+    uint16_t length
+)
 {
-    (void)context;
+    uart_transport_t *transport = (uart_transport_t *)context;
 
-    if (frame->type != UART_FRAME_TYPE_DATA)
+    return uart_transport_send(
+        transport,
+        type,
+        sequence,
+        payload,
+        length
+    ) == HAL_OK;
+}
+
+// Receive complete, CRC-validated frames from either UART.
+static void on_uart_frame(const uart_frame_t *frame, void *context)
+{
+    if (frame == NULL || context == NULL)
     {
         return;
     }
 
-    // Toggle the Nucleo LED after receiving a valid DATA frame.
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    packet_port_t source = *(packet_port_t *)context;
 
-    // Preserve the existing one-byte success ACK.
-    HAL_StatusTypeDef status = uart_transport_send(
-        &pi_transport,
-        UART_FRAME_TYPE_ACK,
-        frame->sequence,
-        &ack_status,
-        sizeof(ack_status)
+    bool accepted = packet_router_receive(
+        &router,
+        source,
+        frame
     );
 
-    if (status != HAL_OK)
+    // Indicate that a DATA packet entered the forwarding queue.
+    if (accepted && frame->type == UART_FRAME_TYPE_DATA)
     {
-        ack_enqueue_failures++;
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
     }
 }
 /* USER CODE END 0 */
@@ -122,7 +142,7 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-// Confirm DMA handles are linked to both UARTs.
+// Confirm DMA is configured for both UARTs.
 if (POWERMESH_PI_UART->hdmarx == NULL ||
     POWERMESH_PI_UART->hdmatx == NULL ||
     POWERMESH_REMOTE_UART->hdmarx == NULL ||
@@ -131,12 +151,33 @@ if (POWERMESH_PI_UART->hdmarx == NULL ||
     Error_Handler();
 }
 
-// Start nonblocking reception on the Pi UART.
+// Connect the shared router to the two F4 UART transports.
+if (!packet_router_init(
+        &router,
+        send_uart_frame,
+        &pi_transport,
+        send_uart_frame,
+        &remote_transport))
+{
+    Error_Handler();
+}
+
+// Start Pi UART reception on USART2.
 if (uart_transport_start(
         &pi_transport,
         POWERMESH_PI_UART,
-        on_pi_frame,
-        NULL) != HAL_OK)
+        on_uart_frame,
+        &pi_port) != HAL_OK)
+{
+    Error_Handler();
+}
+
+// Start remote UART reception on USART1.
+if (uart_transport_start(
+        &remote_transport,
+        POWERMESH_REMOTE_UART,
+        on_uart_frame,
+        &remote_port) != HAL_OK)
 {
     Error_Handler();
 }
@@ -149,9 +190,15 @@ while (1)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    // Process incoming UART data and DMA completions.
     uart_transport_poll(&pi_transport);
-}
-/* USER CODE END 3 */
+    uart_transport_poll(&remote_transport);
+
+    // Move queued packets between the two transports.
+    packet_router_poll(&router);
+
+    /* USER CODE END 3 */
 }
 
 /**
