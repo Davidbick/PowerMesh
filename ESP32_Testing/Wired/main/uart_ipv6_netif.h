@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stddef.h>
@@ -9,24 +10,16 @@
 extern "C" {
 #endif
 
-/**
- * Create the raw IPv6 lwIP netif for the UART tunnel.
- *
- * Incoming raw IPv6 packets arrive over UART. Outgoing unicast IPv6 packets
- * selected for this interface are copied to a FreeRTOS queue, encapsulated in
- * UDP over the ESP32 Wi-Fi connection, and sent to the Pi. The Pi's hybrid
- * bridge decapsulates them and injects them into powermesh0. The inner IPv6
- * packet addresses are preserved. Multicast output from uaN is not supported
- * in this initial test stage.
- */
+// Initialize the custom wired IPv6 interface.
+// Incoming and outgoing IPv6 packets use PowerMesh UART framing.
 esp_err_t uart_ipv6_netif_start(void);
 
-/**
- * Validate and enqueue one raw IPv6 packet into lwIP. The packet begins with
- * an IPv6 header (no Ethernet header). This function copies it into a lwIP
- * pbuf and queues it for the TCP/IP task.
- */
-esp_err_t uart_ipv6_netif_input(const uint8_t *packet, size_t length);
+// Validate and deliver one raw IPv6 packet into lwIP.
+// The packet contains an IPv6 header, without an Ethernet header.
+esp_err_t uart_ipv6_netif_input(
+    const uint8_t *packet,
+    size_t length
+);
 
 #ifdef __cplusplus
 }

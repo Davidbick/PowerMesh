@@ -2,6 +2,7 @@
 #include <esp_log.h>
 #include <esp_mac.h>
 #include <nvs_flash.h>
+#include <esp_netif.h>
 
 #include <esp_matter.h>
 #include <esp_matter_console.h>
@@ -334,6 +335,7 @@ extern "C" void app_main()
 
     /* Initialize the ESP NVS layer */
     nvs_flash_init();
+    ESP_ERROR_CHECK(esp_netif_init());
 
     MEMORY_PROFILER_DUMP_HEAP_STAT("Bootup");
 
@@ -405,17 +407,7 @@ extern "C" void app_main()
 #endif
 #endif // CONFIG_ENABLE_SET_CERT_DECLARATION_API
 
-    /* Matter start */
-    err = esp_matter::start(app_event_cb);
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
-
-    MEMORY_PROFILER_DUMP_HEAP_STAT("matter started");
-
-    /* Starting driver with default values */
-    app_driver_light_set_defaults(light_endpoint_id);
-
-
-    // UART TESTING ==============================
+    // Initialize the PowerMesh wired IPv6 interface.
     constexpr int UART_PORT = UART_NUM_1;
     constexpr int UART_TX_GPIO = 17;
     constexpr int UART_RX_GPIO = 18;
@@ -428,29 +420,15 @@ extern "C" void app_main()
 
     ABORT_APP_ON_FAILURE(
         err == ESP_OK,
-        ESP_LOGE(TAG, "Failed to initialize UART")
+        ESP_LOGE(TAG, "Failed to initialize PowerMesh UART")
     );
 
     err = uart_ipv6_netif_start();
+
     ABORT_APP_ON_FAILURE(
         err == ESP_OK,
-        ESP_LOGE(TAG, "Failed to start UART IPv6 lwIP netif: %s", esp_err_to_name(err))
+        ESP_LOGE(TAG, "Failed to initialize wired IPv6 interface")
     );
-
-    // Request Matter DNS-SD to refresh after adding the UART IPv6 interface.
-    chip::DeviceLayer::ChipDeviceEvent dnssd_restart_event{};
-    dnssd_restart_event.Type =
-        chip::DeviceLayer::DeviceEventType::kDnssdRestartNeeded;
-    CHIP_ERROR post_err =
-        chip::DeviceLayer::PlatformMgr().PostEvent(&dnssd_restart_event);
-    if (post_err != CHIP_NO_ERROR) {
-        ESP_LOGE(TAG, "Failed to request Matter DNS-SD restart: %" CHIP_ERROR_FORMAT, post_err.Format());
-    } else {
-        ESP_LOGI(TAG, "Requested Matter DNS-SD restart after UART netif init");
-    }
-
-    // Diagnostic: check whether CHIP's Inet layer sees the custom netif.
-    log_chip_inet_interfaces();
 
     err = uart_frame_parser_start(
         uart_frame_received,
@@ -459,7 +437,7 @@ extern "C" void app_main()
 
     ABORT_APP_ON_FAILURE(
         err == ESP_OK,
-        ESP_LOGE(TAG, "Failed to start UART parser")
+        ESP_LOGE(TAG, "Failed to start UART frame parser")
     );
 
     err = uart_ipv6_udp_test_start();
@@ -469,8 +447,38 @@ extern "C" void app_main()
         ESP_LOGE(TAG, "Failed to start IPv6 UDP test receiver")
     );
 
-    ESP_LOGI(TAG, "UART frame + raw IPv6 lwIP input initialized");
-    // ===========================================
+    ESP_LOGI(TAG, "PowerMesh wired IPv6 transport initialized");
+
+    /* Matter start */
+    err = esp_matter::start(app_event_cb);
+    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
+
+    MEMORY_PROFILER_DUMP_HEAP_STAT("matter started");
+
+    /* Starting driver with default values */
+    app_driver_light_set_defaults(light_endpoint_id);
+
+    // Refresh Matter discovery after the wired network is available.
+    chip::DeviceLayer::ChipDeviceEvent dnssd_restart_event{};
+    dnssd_restart_event.Type =
+        chip::DeviceLayer::DeviceEventType::kDnssdRestartNeeded;
+
+    CHIP_ERROR post_err =
+        chip::DeviceLayer::PlatformMgr().PostEvent(
+            &dnssd_restart_event
+        );
+
+    if (post_err != CHIP_NO_ERROR) {
+        ESP_LOGE(
+            TAG,
+            "Failed to request DNS-SD restart: %" CHIP_ERROR_FORMAT,
+            post_err.Format()
+        );
+    } else {
+        ESP_LOGI(TAG, "Requested Matter DNS-SD restart");
+    }
+
+    log_chip_inet_interfaces();
 
 
 #if CONFIG_ENABLE_ENCRYPTED_OTA

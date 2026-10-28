@@ -44,6 +44,15 @@ CONFIG_MBEDTLS_HKDF_C=y
 # unique local addresses for fabrics(MAX_FABRIC), a link local address(1)
 CONFIG_LWIP_IPV6_NUM_ADDRESSES=6
 
+# PowerMesh uses an externally configured wired IPv6 interface.
+CONFIG_CUSTOM_NETWORK_CONFIG=y
+
+# Disable Wi-Fi as the operational Matter network.
+CONFIG_ENABLE_WIFI_STATION=n
+
+# Keep Matter's minimal DNS-SD implementation.
+CONFIG_USE_MINIMAL_MDNS=y
+
 # Exclude unused clusters to optimize flash and memory usage
 CONFIG_SUPPORT_ACCOUNT_LOGIN_CLUSTER=n
 CONFIG_SUPPORT_ACTIONS_CLUSTER=n
