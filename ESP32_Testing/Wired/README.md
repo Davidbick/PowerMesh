@@ -78,7 +78,7 @@ Any PowerShell windows are not needed anymore. Go back to WSL and enter `ls -l /
 
 Enter this command while replacing `/dev/ttyUSB0` with your actual port.
 ```
-cd "$ESP_MATTER_PATH/examples/light"
+cd "$ESP_MATTER_PATH/examples/plc_light_endpoint"
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
