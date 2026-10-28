@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "powermesh_board.h"
+#include "uart_transport.h"
+#include "packet_router.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +52,13 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
+static uart_transport_t link_transport;
+static uart_transport_t esp32_transport;
+static packet_router_t router;
+
+static packet_port_t link_port = PACKET_PORT_GATEWAY;
+static packet_port_t esp32_port = PACKET_PORT_REMOTE;
+
 static uint32_t last_blink_ms = 0U;
 /* USER CODE END PV */
 
@@ -67,6 +76,42 @@ static void MX_LPUART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+// Adapt the shared router interface to the G4 HAL UART transport.
+static bool send_uart_frame(
+    void *context,
+    uint8_t type,
+    uint16_t sequence,
+    const uint8_t *payload,
+    uint16_t length
+)
+{
+    uart_transport_t *transport = (uart_transport_t *)context;
+
+    return uart_transport_send(
+        transport,
+        type,
+        sequence,
+        payload,
+        length
+    ) == HAL_OK;
+}
+
+// Receive complete, CRC-validated frames from either UART.
+static void on_uart_frame(const uart_frame_t *frame, void *context)
+{
+    if (frame == NULL || context == NULL)
+    {
+        return;
+    }
+
+    packet_port_t source = *(packet_port_t *)context;
+
+    (void)packet_router_receive(
+        &router,
+        source,
+        frame
+    );
+}
 /* USER CODE END 0 */
 
 /**
@@ -104,26 +149,57 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  // Verify that both communication UARTs have DMA handles.
-  if (POWERMESH_LINK_UART->hdmarx == NULL ||
-      POWERMESH_LINK_UART->hdmatx == NULL ||
-      POWERMESH_ESP32_UART->hdmarx == NULL ||
-      POWERMESH_ESP32_UART->hdmatx == NULL)
-  {
+// Confirm DMA is configured for both UARTs.
+if (POWERMESH_LINK_UART->hdmarx == NULL ||
+    POWERMESH_LINK_UART->hdmatx == NULL ||
+    POWERMESH_ESP32_UART->hdmarx == NULL ||
+    POWERMESH_ESP32_UART->hdmatx == NULL)
+{
     Error_Handler();
-  }
+}
 
-  // Report successful peripheral initialization over ST-LINK.
-  static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
+// Connect the shared router to the two G4 UART transports.
+if (!packet_router_init(
+        &router,
+        send_uart_frame,
+        &link_transport,
+        send_uart_frame,
+        &esp32_transport))
+{
+    Error_Handler();
+}
 
-  (void)HAL_UART_Transmit(
-      POWERMESH_DEBUG_UART,
-      boot_message,
-      sizeof(boot_message) - 1U,
-      100U
-  );
+// Start F4 link reception on USART3.
+if (uart_transport_start(
+        &link_transport,
+        POWERMESH_LINK_UART,
+        on_uart_frame,
+        &link_port) != HAL_OK)
+{
+    Error_Handler();
+}
 
-  /* USER CODE END 2 */
+// Start ESP32 reception on USART1.
+if (uart_transport_start(
+        &esp32_transport,
+        POWERMESH_ESP32_UART,
+        on_uart_frame,
+        &esp32_port) != HAL_OK)
+{
+    Error_Handler();
+}
+
+// Report successful initialization over ST-LINK.
+static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
+
+(void)HAL_UART_Transmit(
+    POWERMESH_DEBUG_UART,
+    boot_message,
+    sizeof(boot_message) - 1U,
+    100U
+);
+
+/* USER CODE END 2 */
 
   /* Initialize led */
   BSP_LED_Init(LED_GREEN);
@@ -140,13 +216,21 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    uint32_t now = HAL_GetTick();
+// Process incoming UART data and DMA completions.
+uart_transport_poll(&link_transport);
+uart_transport_poll(&esp32_transport);
 
-    if ((uint32_t)(now - last_blink_ms) >= 500U)
-    {
-      last_blink_ms = now;
-      (void)BSP_LED_Toggle(LED_GREEN);
-    }
+// Move queued packets between the two transports.
+packet_router_poll(&router);
+
+// Keep the existing LED heartbeat.
+uint32_t now = HAL_GetTick();
+
+if ((uint32_t)(now - last_blink_ms) >= 500U)
+{
+    last_blink_ms = now;
+    (void)BSP_LED_Toggle(LED_GREEN);
+}
   }
   /* USER CODE END 3 */
 }

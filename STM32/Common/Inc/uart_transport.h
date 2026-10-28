@@ -3,7 +3,13 @@
 
 #include <stdint.h>
 
+#if defined(STM32F446xx)
 #include "stm32f4xx_hal.h"
+#elif defined(STM32G474xx)
+#include "stm32g4xx_hal.h"
+#else
+#error "Unsupported STM32 target for UART transport"
+#endif
 #include "uart_frame.h"
 
 #define UART_TRANSPORT_RX_DMA_SIZE       2048U
