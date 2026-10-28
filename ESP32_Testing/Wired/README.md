@@ -19,7 +19,7 @@ The ESP32 does not change state when the color red is selected on Home Assistant
 The Matter controller (Raspberry Pi) will send the ESP32 customed framed IPv6 packets over a linux network tunnel addressed to the ESP32. The ESP32 will be broadcasting itself via mDNS. When it reaches the ESP32, the packets are deframed and processed. The ESP32 changes states after processing the Matter payload, and sends a callback to the RPI saying that its state has successfully changes.
 
 ## ESP32 Build + Flashing
-### sdkconfig + CMake Changes
+### CMake Changes
 There are no changes currently compared to the wireless version. Make sure that the CMake is using your correct ESP32 model though.
 
 ### CHIP patch
@@ -118,7 +118,7 @@ http://ADDRESS:8123
 
 If the ESP32 has not been commissioned yet, then commission it.
 
-Afterwards, you can now change the state of the ESP32 using Home Assistant, and the transmission (RPI --> ESP32) should be wired. The return (ESP32 --> RPI) should be wireless. To test, simply remove the wiring and the ESP32 should not change states.
+Afterwards, you can now change the state of the ESP32 using Home Assistant, and the transmission (RPI --> ESP32) and (ESP32 --> RPI) should be wired. To test, simply remove the wiring and the ESP32 should not change states.
 
 The Matter traffic can also be seen by entering this in another SSH terminal of the RPI:
 ```
