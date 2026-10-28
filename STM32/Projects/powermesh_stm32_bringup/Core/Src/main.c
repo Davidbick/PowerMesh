@@ -142,62 +142,62 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-// Confirm DMA is configured for both UARTs.
-if (POWERMESH_PI_UART->hdmarx == NULL ||
-    POWERMESH_PI_UART->hdmatx == NULL ||
-    POWERMESH_REMOTE_UART->hdmarx == NULL ||
-    POWERMESH_REMOTE_UART->hdmatx == NULL)
-{
-    Error_Handler();
-}
+  // Confirm DMA is configured for both UARTs.
+  if (POWERMESH_PI_UART->hdmarx == NULL ||
+      POWERMESH_PI_UART->hdmatx == NULL ||
+      POWERMESH_REMOTE_UART->hdmarx == NULL ||
+      POWERMESH_REMOTE_UART->hdmatx == NULL)
+  {
+      Error_Handler();
+  }
 
-// Connect the shared router to the two F4 UART transports.
-if (!packet_router_init(
-        &router,
-        send_uart_frame,
-        &pi_transport,
-        send_uart_frame,
-        &remote_transport))
-{
-    Error_Handler();
-}
+  // Connect the shared router to the two F4 UART transports.
+  if (!packet_router_init(
+          &router,
+          send_uart_frame,
+          &pi_transport,
+          send_uart_frame,
+          &remote_transport))
+  {
+      Error_Handler();
+  }
 
-// Start Pi UART reception on USART2.
-if (uart_transport_start(
-        &pi_transport,
-        POWERMESH_PI_UART,
-        on_uart_frame,
-        &pi_port) != HAL_OK)
-{
-    Error_Handler();
-}
+  // Start Pi UART reception on USART2.
+  if (uart_transport_start(
+          &pi_transport,
+          POWERMESH_PI_UART,
+          on_uart_frame,
+          &pi_port) != HAL_OK)
+  {
+      Error_Handler();
+  }
 
-// Start remote UART reception on USART1.
-if (uart_transport_start(
-        &remote_transport,
-        POWERMESH_REMOTE_UART,
-        on_uart_frame,
-        &remote_port) != HAL_OK)
-{
-    Error_Handler();
-}
-/* USER CODE END 2 */
+  // Start remote UART reception on USART1.
+  if (uart_transport_start(
+          &remote_transport,
+          POWERMESH_REMOTE_UART,
+          on_uart_frame,
+          &remote_port) != HAL_OK)
+  {
+      Error_Handler();
+  }
+  /* USER CODE END 2 */
 
-  /* Infinite loop */
-/* USER CODE BEGIN WHILE */
-while (1)
-{
-    /* USER CODE END WHILE */
+    /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+      /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+      /* USER CODE BEGIN 3 */
 
-    // Process incoming UART data and DMA completions.
-    uart_transport_poll(&pi_transport);
-    uart_transport_poll(&remote_transport);
+      // Process incoming UART data and DMA completions.
+      uart_transport_poll(&pi_transport);
+      uart_transport_poll(&remote_transport);
 
-    // Move queued packets between the two transports.
-    packet_router_poll(&router);
-
+      // Move queued packets between the two transports.
+      packet_router_poll(&router);
+  }
     /* USER CODE END 3 */
 }
 
