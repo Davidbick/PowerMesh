@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "powermesh_board.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +50,7 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
-
+static uint32_t last_blink_ms = 0U;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -104,6 +104,25 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  // Verify that both communication UARTs have DMA handles.
+  if (POWERMESH_LINK_UART->hdmarx == NULL ||
+      POWERMESH_LINK_UART->hdmatx == NULL ||
+      POWERMESH_ESP32_UART->hdmarx == NULL ||
+      POWERMESH_ESP32_UART->hdmatx == NULL)
+  {
+    Error_Handler();
+  }
+
+  // Report successful peripheral initialization over ST-LINK.
+  static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
+
+  (void)HAL_UART_Transmit(
+      POWERMESH_DEBUG_UART,
+      boot_message,
+      sizeof(boot_message) - 1U,
+      100U
+  );
+
   /* USER CODE END 2 */
 
   /* Initialize led */
@@ -120,6 +139,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    uint32_t now = HAL_GetTick();
+
+    if ((uint32_t)(now - last_blink_ms) >= 500U)
+    {
+      last_blink_ms = now;
+      (void)BSP_LED_Toggle(LED_GREEN);
+    }
   }
   /* USER CODE END 3 */
 }
