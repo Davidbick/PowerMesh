@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "uart_frame.h"
+#include "powermesh_board.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,6 +96,14 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  // Confirm DMA handles were linked to both UARTs.
+  if (POWERMESH_PI_UART->hdmarx == NULL ||
+      POWERMESH_PI_UART->hdmatx == NULL ||
+      POWERMESH_REMOTE_UART->hdmarx == NULL ||
+      POWERMESH_REMOTE_UART->hdmatx == NULL)
+  {
+    Error_Handler();
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
