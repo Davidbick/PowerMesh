@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug STM32G474RE",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/Debug/powermesh_g4_bridge.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "device": "STM32G474RE",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32g4x.cfg"
+      ],
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "raw"
+    }
+  ]
+}
