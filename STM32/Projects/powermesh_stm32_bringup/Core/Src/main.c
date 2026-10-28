@@ -25,8 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "uart_frame.h"
 #include "powermesh_board.h"
+#include "uart_transport.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,8 +47,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static uart_frame_t rx_frame;
-static uint8_t ack_status = 0U;
+static uart_transport_t pi_transport;
+static const uint8_t ack_status = 0U;
+static volatile uint32_t ack_enqueue_failures = 0U;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,7 +60,32 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void on_pi_frame(const uart_frame_t *frame, void *context)
+{
+    (void)context;
 
+    if (frame->type != UART_FRAME_TYPE_DATA)
+    {
+        return;
+    }
+
+    // Toggle the Nucleo LED after receiving a valid DATA frame.
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+    // Preserve the existing one-byte success ACK.
+    HAL_StatusTypeDef status = uart_transport_send(
+        &pi_transport,
+        UART_FRAME_TYPE_ACK,
+        frame->sequence,
+        &ack_status,
+        sizeof(ack_status)
+    );
+
+    if (status != HAL_OK)
+    {
+        ack_enqueue_failures++;
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -96,40 +122,36 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  // Confirm DMA handles were linked to both UARTs.
-  if (POWERMESH_PI_UART->hdmarx == NULL ||
-      POWERMESH_PI_UART->hdmatx == NULL ||
-      POWERMESH_REMOTE_UART->hdmarx == NULL ||
-      POWERMESH_REMOTE_UART->hdmatx == NULL)
-  {
+// Confirm DMA handles are linked to both UARTs.
+if (POWERMESH_PI_UART->hdmarx == NULL ||
+    POWERMESH_PI_UART->hdmatx == NULL ||
+    POWERMESH_REMOTE_UART->hdmarx == NULL ||
+    POWERMESH_REMOTE_UART->hdmatx == NULL)
+{
     Error_Handler();
-  }
-  /* USER CODE END 2 */
+}
+
+// Start nonblocking reception on the Pi UART.
+if (uart_transport_start(
+        &pi_transport,
+        POWERMESH_PI_UART,
+        on_pi_frame,
+        NULL) != HAL_OK)
+{
+    Error_Handler();
+}
+/* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+/* USER CODE BEGIN WHILE */
+while (1)
+{
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-     if (uart_frame_receive(&huart2, &rx_frame) == HAL_OK)
-    {
-        if (rx_frame.type == UART_FRAME_TYPE_DATA)
-        {
-            HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-
-            uart_frame_send(
-                &huart2,
-                UART_FRAME_TYPE_ACK,
-                rx_frame.sequence,
-                &ack_status,
-                sizeof(ack_status)
-            );
-        }
-    }
-  }
-  /* USER CODE END 3 */
+    uart_transport_poll(&pi_transport);
+}
+/* USER CODE END 3 */
 }
 
 /**

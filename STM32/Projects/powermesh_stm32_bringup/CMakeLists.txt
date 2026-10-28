@@ -44,12 +44,14 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    Core/Src/uart_frame.c
+    ../../Common/Src/uart_frame.c
+    Core/Src/uart_transport.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Inc
+    ../../Common/Inc
 )
 
 # Add project symbols (macros)
