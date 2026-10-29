@@ -74,7 +74,7 @@ static void udp_rx_task(void *arg)
         /*
          * Echo to the sender. If the packet arrived through uaN and the
          * sender's address is link-local, lwIP's scope ID keeps the send on
-         * uaN; uart_netif_output_ipv6 then hands this unicast packet to Wi-Fi.
+         * uaN; uart_netif_output_ipv6 then sends the unicast packet over UART.
          */
         const int sent = sendto(
             sock,

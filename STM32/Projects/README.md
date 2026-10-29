@@ -1,45 +1,24 @@
-# STM32 Bring-Up
+# STM32 firmware projects
 
-This sets up the NUCLEO-F446RE environment.
+The current wired PowerMesh prototype uses two STM32 development boards. Both active projects build with STM32CubeMX-generated CMake projects and share packet framing, queues, routing, and DMA UART transport code from `../Common/`.
 
+| Project | Role | Status |
+| --- | --- | --- |
+| `powermesh_stm32_bringup/` | STM32F446RE gateway, Raspberry Pi UART to remote UART | Active |
+| `powermesh_g4_bridge/` | STM32G474RE bridge, F4 UART to ESP32 UART | Active |
+| `stm32_to_st8500_test/` | Earlier standalone STM32F4 / ST8500 bootloader experiment | Historical; not the active transport |
 
-## What This Does
+## Build
 
-- Builds STM32 project using **CMake + VSCode**
-- Verifies:
-  - LED blink
-  - UART transmit
+Install STM32CubeMX, an Arm GCC toolchain, CMake, OpenOCD, and the VS Code Cortex-Debug extension if debugging in VS Code.
 
-## Required Tools
+From the active project directory:
 
-Install the following:
-
-- STM32CubeMX
-- arm-none-eabi-gcc
-- CMake
-- VSCode + Extensions
-  - C/C++, CMake Tools, Cortex-Debug
-- OpenOCD
-- STM32CubeProgrammer
-
-## Build Instructions
-
-From project root:
-
-```
+```bash
 cmake --preset Debug
-cmake --build --preset Debug
+cmake --build build/Debug
 ```
 
-## Hardware Test (When Board Arrives)
+Use each project's `.ioc` file when changing peripheral configuration. The active projects share code in `STM32/Common/`; neither has an integrated ST8500 modem driver yet.
 
-1. Plug in NUCLEO-F446RE via USB  
-2. Start debug in VSCode  
-3. Verify:
-   - Breakpoint at `main()` works  
-   - LED blinks  
-   - UART prints over serial terminal  
-
-- Next steps:
-  - SPI bring-up  
-  - STM32 ↔ ST8500 communication  
+To run the complete wired test, connect Pi to F4, F4 to G4, and G4 to ESP32 as documented in the platform READMEs. The eventual PLC integration will replace the F4-to-G4 test link with ST8500 modem transport; it is not an SPI link.

@@ -1,5 +1,5 @@
 # ESP32 Testing (Wired)
-Used to test the Matter transport to see if a Matter endpoint receives a wired Matter payload correctly. Currently being tested on a ESP32S3.
+This is the active ESP32-S3 Matter light endpoint for the fully wired Pi -> STM32F4 -> STM32G4 -> ESP32 prototype. It receives IPv6 packets through a custom framed UART interface and returns IPv6 packets over UART.
 
 Using ESP IDF 6.0.2 and ESP Matter 1.6.0 in a WSL environment. Please install the necessary dependencies and applications to build and flash the project.
 
@@ -16,16 +16,16 @@ In addition, use a nRF Connect to check if the BLE is being broadcasted while op
 The ESP32 does not change state when the color red is selected on Home Assistant. It is unknown how much colors are effected.
 
 ### Matter Command Processing
-The Matter controller (Raspberry Pi) will send the ESP32 customed framed IPv6 packets over a linux network tunnel addressed to the ESP32. The ESP32 will be broadcasting itself via mDNS. When it reaches the ESP32, the packets are deframed and processed. The ESP32 changes states after processing the Matter payload, and sends a callback to the RPI saying that its state has successfully changes.
+Home Assistant/Matter Server sends IPv6 packets through the Pi TUN and UART bridge, then through the F4 and G4. The ESP32 deframes them and passes the IPv6 payload into lwIP/Matter. State updates and responses follow the wired UART path in the opposite direction. Matter discovery uses a temporary CHIP mDNS address-policy patch described below.
 
 ## ESP32 Build + Flashing
 ### CMake Changes
-There are no changes currently compared to the wireless version. Make sure that the CMake is using your correct ESP32 model though.
+This project's `CMakeLists.txt`, `sdkconfig`, and `dependencies.lock` are committed. The downloaded `managed_components/` directory is intentionally ignored; ESP-IDF restores components during the build. Use the ESP32-S3 target for the tested setup.
 
 ### CHIP patch
-Connectedhomeip (CHIP) is the official open source repo for Matter. For the mDNS to work correcly for the ESP32, we will have to patch a file used by the build called `AddressPolicy_DefaultImpl.cpp`. Included in the Wired file is `apply_minimal_mdns_tunnel_patch_v2` which will perform the patch for us.
+Connectedhomeip (CHIP) is the Matter implementation. The current test setup needs an address-policy change in the **external ESP-Matter/CHIP SDK source file** `AddressPolicy_DefaultImpl.cpp`. The versioned `apply_minimal_mdns_tunnel_patch_v2.py` script applies it. Do not confuse this external SDK patch with files in `managed_components/`. It is specific to the working prototype and should not be applied to unrelated projects.
 
-Find where the file is:
+The following locates the SDK source in the original copied-example workspace. If building directly from this repository, use its own build directory and adjust the path to the active SDK checkout:
 ```
 cd ~/esp/esp-matter/examples/plc_light_endpoint
 
@@ -37,7 +37,7 @@ ls -l "$SRC"
 
 Apply the patch:
 ```
-python3 apply_minimal_mdns_tunnel_patch_v2.py "$SRC"
+python3 $HOME/PowerMesh/ESP32_Testing/Wired/apply_minimal_mdns_tunnel_patch_v2.py "$SRC"
 ```
 
 
@@ -56,7 +56,7 @@ source ./export.sh
 
 Setting ESP32 target and building:
 ```
-cd ~/esp/esp-matter/examples/plc_light_endpoint
+cd $HOME/PowerMesh/ESP32_Testing/Wired
 idf.py set-target esp32s3
 idf.py build
 ```
@@ -78,7 +78,7 @@ Any PowerShell windows are not needed anymore. Go back to WSL and enter `ls -l /
 
 Enter this command while replacing `/dev/ttyUSB0` with your actual port.
 ```
-cd "$ESP_MATTER_PATH/examples/plc_light_endpoint"
+cd $HOME/PowerMesh/ESP32_Testing/Wired
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
@@ -95,20 +95,14 @@ sudo apt update && sudo apt install tcpdump -y
 ### Wiring
 On the front silkscreen, 17 is TX while 18 will be RX. Connect these pins to the corresponding pins of the STM32 (if testing full PLC) or Raspberry Pi (if testing wired Matter only). G is ground for the ESP32. Make sure to connect ground for the devices that are communicating to each other to a shared ground.
 
-### Setting up TUN
-Set up the TUN:
+### Pi TUN and bridge
+On the Pi, run `bash RaspberryPi/install.sh` once from the PowerMesh root. It installs the service that sets up `powermesh0` and runs the fully wired UART bridge at startup. Check the bridge with:
 ```
-sudo bash /home/powermesh/PowerMesh/RaspberryPi/setup_tun.sh
+sudo systemctl status powermesh
+sudo journalctl -u powermesh -f
 ```
 
-Run the hybrid bridge:
-```
-sudo python3 -u /home/powermesh/PowerMesh/RaspberryPi/tun_uart_bridge_hybrid.py \
-  /dev/serial0 --tun powermesh0 \
-  --return-interface eth0 \
-  --return-bind fe80::1ea3:e633:8c63:30b1 \
-  --return-peer fe80::eaf6:aff:fea8:9f58
-```
+For manual diagnostics and serial device selection, see [RaspberryPi/README.md](../../RaspberryPi/README.md). The older `tun_uart_bridge_hybrid.py` was for a Wi-Fi return-path experiment; it is not used by the working all-wired demo.
 
 ### Open Home Assistant Dashboard
 Get the address of the RPI. This should be known because it is the same address that is used to SSH to the RPI. Enter this into a browser and replace ADDRESS with your RPI address, which could be IPv4 or IPv6.

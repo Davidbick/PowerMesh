@@ -147,8 +147,8 @@ def main():
             print(f"FAILED: expected sequence {seq}, got {ack_seq}")
             return
 
-        if ack_payload:
-            print(f"FAILED: expected empty ACK, got {len(ack_payload)} bytes")
+        if ack_payload != b"\x00":
+            print(f"FAILED: expected accepted ACK (00), got {ack_payload.hex()}")
             return
 
         print(f"SUCCESS: valid ACK received for sequence {ack_seq}")

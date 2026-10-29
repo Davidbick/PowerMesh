@@ -1,12 +1,29 @@
 # PowerMesh: PLC Smart Home
-PowerMesh is a smart home system that uses power line communication (PLC) instead of Wi-Fi to connect devices, enabling more stable and secure control over existing electrical wiring. It integrates Matter and Home Assistant to support cross-platform device control while exploring IP-based communication over power lines. 
+PowerMesh is a smart-home research project exploring Matter and Home Assistant over G3-PLC using the ST8500 modem and STLD1 analog front end. The current working prototype uses wired UART connections between development boards to validate bidirectional IPv6/Matter communication before PLC hardware is inserted. 
 
-## Project Architecture 
-PowerMesh leverages PLC communication to integrate a Matter-based protocol built atop IEEE 1901.2. The user via our protocol can communication with one of our "hubs" to control an LED bulb at the other end of the Powerline.
+## Current Working Architecture
 
-Our user interacts with Home Assistant which transfers the commands via the ST8500 and STLD1 chips. The commands control the state of the endpoint lightbulbs and has the option to scale to various other receiver hubs connected to the powerlines.
+```text
+Home Assistant / Matter Server (Raspberry Pi)
+              |
+      IPv6 TUN (powermesh0)
+              |
+        UART bridge (Pi)
+              |
+      STM32F446RE (F4)
+              |
+       Wired UART link
+              |
+      STM32G474RE (G4)
+              |
+       Wired UART link
+              |
+       ESP32-S3 Matter light
+```
 
+Packets travel in **both directions** through the wired chain. The STM32 firmware handles framing, CRC validation, buffering, and forwarding; the ESP32 runs the Matter endpoint. This setup does **not** yet include ST8500, STLD1, the analog PLC front end, or the power-line medium.
 
+For active instructions, see [RaspberryPi](RaspberryPi/README.md), [STM32 projects](STM32/Projects/README.md), and [ESP32 wired endpoint](ESP32_Testing/Wired/README.md). Earlier wireless and ST8500 experiments are kept for reference, not as the active packet path.
 
 ## Task Designation:
 
@@ -28,18 +45,23 @@ Our user interacts with Home Assistant which transfers the commands via the ST85
 ## Completed Work: Design Prototype
 - We've completed schematic design for our analog and digital board with plans to complete layout before the beginning of next semester.
 - We've integrated Home Assistant wirelessly with our RaspberryPi host device with plans to complete wired integration with an LED circuit.
-- We've narrowed our software scope to the G3 stack after ST confirmed indirect IEEE 1901.2 compatibility. We'll have ST8500 integration before the beginning of next semester.
+- We've narrowed our software scope to the G3 stack after discussions with ST about IEEE 1901.2 compatibility. ST8500 integration remains a future stage.
 
 ## Completed Work: Beta Build
-- Home Assistant TUN interface
-- PCB Digital Designs
-- PCB Analog Designs
+- Home Assistant TUN interface and Raspberry Pi UART bridge
+- End-to-end bidirectional wired Matter communication through F4, G4, and ESP32-S3
+- PCB digital and analog designs (PLC hardware integration still pending)
 
-# Build Instructions
-- Install Home Assistant OS on RaspberryPi, and connect GPIO pins to the appropriate serial protocol
-- Use local address of Home Assistant server to visit Webpage and control added Home Assistant devices
+## Build and Test
 
-# List of Known Bugs:
-- PLC functionality has yet to be thoroughly tested with other components which will be a large endeavor
-- The TUN interface and the Raspberry Pi-to-STM32 bridge currently require manual startup after the Raspberry Pi boots.
-- STM32-to-ST8500 communication has not yet been integrated into the PowerMesh packet path.
+1. Prepare the Raspberry Pi bridge with `bash RaspberryPi/install.sh` once (run as your normal Pi user).
+2. Build and flash the F4 and G4 firmware under `STM32/Projects/`.
+3. Build and flash `ESP32_Testing/Wired/`, then commission the Matter light.
+4. Verify both directions using the TUN interface, Pi bridge service logs, and the Matter light state in Home Assistant.
+
+See the component-specific READMEs for wiring, build dependencies, and diagnostics. The Pi installer configures a systemd service to start the TUN and UART bridge automatically after boot.
+
+## Remaining Work
+- Integrate and validate the ST8500 modem interface and analog PLC front end.
+- Test the actual power-line transport; the present working chain is wired UART only.
+- Continue end-to-end testing as the PLC transport replaces the temporary UART link.

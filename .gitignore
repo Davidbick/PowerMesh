@@ -1,6 +1,18 @@
-plc-pcb/.history/
-# CMake / VS Code build output
-STM32/Projects/powermesh_stm32_bringup/build/
-STM32/Projects/powermesh_g4_bridge/build/
-STM32/Projects/stm32_to_st8500_test/build/
+# Local build output
+**/build/
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
 RaspberryPi/.venv/
+
+# ESP-IDF component manager downloads, restored from dependencies.lock
+**/managed_components/
+**/sdkconfig.old
+
+# KiCad local state and automatic recovery snapshots
+**/.history/
+**/*-backups/
+**/_restore_backup_*/
+*.kicad_prl
+*.lck
+*.bak

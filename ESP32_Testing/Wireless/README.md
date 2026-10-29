@@ -1,4 +1,7 @@
 # ESP32 Testing (Wireless)
+
+**Historical Wi-Fi Matter-light baseline.** This experiment is kept for reference. The active PowerMesh endpoint is [Wired/](../Wired/README.md); do not use these Wi-Fi instructions for the UART/PLC prototype.
+
 Used to test the Matter transport to see if a Matter endpoint receives a wireless payload correctly.
 
 Currently supports ESP32-S3 DevKitC-1 v1.1. However, by changing the first of the if-elseif-statements "set" in the CMakeLists to your ESP32, it should use the sdkconfig for your ESP32.

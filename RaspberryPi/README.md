@@ -1,155 +1,75 @@
-# PowerMesh Raspberry Pi Bridge
+# PowerMesh Raspberry Pi gateway
 
-This directory contains the Raspberry Pi side of the PowerMesh transport.
+The Pi runs Home Assistant/Matter Server, provides the IPv6 `powermesh0` TUN interface, and exchanges framed IPv6 packets with the STM32F4 over UART. The UART transport uses sync bytes, sequence numbers, CRC32, DATA frames, and link-local ACKs.
 
-It bridges Linux IPv6 traffic from a TUN interface to the STM32 gateway using the PowerMesh UART framing protocol.
+## Initial installation
 
-## Setup
-
-Clone the repository on the Raspberry Pi:
+On the Raspberry Pi, as your normal user:
 
 ```bash
-cd ~
 git clone https://github.com/Davidbick/PowerMesh.git
 cd PowerMesh
+bash RaspberryPi/install.sh
 ```
 
-Install the required Python support:
+The installer creates `RaspberryPi/.venv`, installs Python dependencies, and installs/enables the `powermesh.service` systemd unit. On every boot the service configures `powermesh0` and starts `tun_uart_bridge.py`.
+
+Check it with:
 
 ```bash
-sudo apt update
-sudo apt install -y python3-venv
+sudo systemctl status powermesh
+sudo journalctl -u powermesh -f
 ```
 
-Create the virtual environment and install dependencies:
-
-```bash
-python3 -m venv RaspberryPi/.venv
-
-RaspberryPi/.venv/bin/pip install \
-    -r RaspberryPi/requirements.txt
-```
-
-## Connect the STM32
-
-Connect the STM32/Nucleo to the Pi over USB.
-
-Find its serial port:
+If you have multiple USB serial devices, configure `POWERMESH_SERIAL` in `/etc/default/powermesh` to select the F4 ST-LINK virtual COM device. Otherwise `start_bridge.sh` attempts to find it automatically. To inspect serial devices:
 
 ```bash
 ls -l /dev/serial/by-id/
-```
-
-or:
-
-```bash
 ls /dev/ttyACM*
 ```
 
-If serial permissions fail:
-
-```bash
-sudo usermod -aG dialout "$USER"
-```
-
-Then log out and back in or reboot.
-
-## Create the TUN Interface
-
-Run the TUN setup script as root:
-
-```bash
-sudo bash RaspberryPi/setup_tun.sh
-```
-
-This creates:
-
-```text
-Interface:  powermesh0
-Pi address: fd00:706d::1/64
-MTU:        1280
-```
-
-Verify:
+## Network check
 
 ```bash
 ip -6 addr show dev powermesh0
-```
-
-and:
-
-```bash
 ip -6 route get fd00:706d::2
 ```
 
-## Run the Bridge
+The Pi has `fd00:706d::1/64` on `powermesh0` with MTU 1280. The ESP32 endpoint uses `fd00:706d::2`.
 
-Start the TUN/UART bridge:
-
-```bash
-sudo RaspberryPi/.venv/bin/python \
-    RaspberryPi/tun_uart_bridge.py \
-    /dev/ttyACM0
-```
-
-Leave this running.
-
-## Test
-
-From another terminal on the Pi:
+With the complete F4, G4, and ESP32 setup powered, test:
 
 ```bash
 ping -6 fd00:706d::2
+sudo tcpdump -ni powermesh0 'ip6 and udp port 5540'
 ```
 
-With the F4, G4, and ESP32 powered and connected, the ESP32 should reply over the full wired path.
+In the service logs, `TUN -> UART` describes outgoing IPv6 packets, `UART ACK` confirms only local frame acceptance, and `UART -> TUN` describes returned IPv6 packets. A returned IPv6 packet or a changed Matter light state confirms end-to-end activity.
 
-The bridge should show:
+## Manual debugging only
 
-```text
-TUN -> UART: seq=1, <bytes> bytes
-UART ACK: seq=1, status=0
-UART -> TUN: seq=1, <bytes> bytes
-```
-
-The UART ACK confirms local frame acceptance; the returned IPv6 packet confirms end-to-end communication.
-
-## Normal Use After Reboot
-
-After rebooting the Pi:
+Normally you do **not** need to start the bridge manually after boot. If you need to run it interactively, stop the systemd service first so two processes do not open the same UART:
 
 ```bash
-cd ~/PowerMesh
-
+sudo systemctl stop powermesh
 sudo bash RaspberryPi/setup_tun.sh
-
-sudo RaspberryPi/.venv/bin/python \
-    RaspberryPi/tun_uart_bridge.py \
-    /dev/ttyACM0
+sudo RaspberryPi/.venv/bin/python -u RaspberryPi/tun_uart_bridge.py /dev/ttyACM0
 ```
 
-## Updating
+Use the correct serial path for your board. After manual debugging, restart the service with `sudo systemctl start powermesh`.
 
-Pull the latest PowerMesh code:
-
-```bash
-cd ~/PowerMesh
-git pull --ff-only
-```
-
-## Current Status
-
-PowerMesh currently supports:
+## Current packet path
 
 ```text
 Home Assistant / Matter Server
-        ↕
-Linux IPv6 / powermesh0 TUN
-        ↕
-Python TUN-UART bridge
-        ↕
-STM32F446RE (Pi-side UART forwarding)
-        ↕
-STM32G474RE (endpoint-side UART forwarding)
-        ↕
-ESP32-S3 (wired IPv6 / Matter light)
+       ↕
+IPv6 TUN / Raspberry Pi UART bridge
+       ↕
+STM32F446RE gateway
+       ↕
+STM32G474RE bridge
+       ↕
+ESP32-S3 Matter light
+```
+
+The current prototype is wired UART throughout; PLC/ST8500 integration is still pending. Earlier `tun_uart_bridge_hybrid.py` and wireless-return tests are retained only as historical experiments.

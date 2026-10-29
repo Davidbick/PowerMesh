@@ -1,5 +1,5 @@
-# Note
-This file contains information about Home Assistant, how it is used, and how it works with our hardware.
+# Earlier Home Assistant setup notes
+These are preserved RPi3/Docker setup and debugging notes from the early project. They are historical, not the current procedure for the working wired Pi-F4-G4-ESP32 system. For current Pi bridge installation and boot behavior, see [RaspberryPi/README.md](../RaspberryPi/README.md).
 
 ## HA Initialization
 When RPI is ready, enter this in a browser:
@@ -12,7 +12,7 @@ If everything is green, then the RPI is being bottlenecked due to its limitation
 Adding matter device
 open HA app -> settings -> device & services -> Search and select "Matter" -> use official matter server (box selected) -> scan QR code or hold phone near Matter device -> device should be connected after naming it
 
-## Adding Home Assitant Docker to Raspberry Pi OS x64 (for RPI3) (CURRENT)
+## Adding Home Assitant Docker to Raspberry Pi OS x64 (for RPI3) (HISTORICAL)
 # Getting Raspberry Pi OS on a microSD
 1. Select Device, OS, storage, create an account, and setup localisation
 2. Skip Wi-Fi

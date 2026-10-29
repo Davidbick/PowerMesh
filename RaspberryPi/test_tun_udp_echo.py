@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Exercise Pi TUN -> UART -> ESP32 lwIP -> Wi-Fi UDP return tunnel -> Pi TUN.
+# Exercise the wired Pi TUN -> STM32 chain -> ESP32 lwIP -> UART return path.
 
 import argparse
 import ipaddress
@@ -46,7 +46,7 @@ def main() -> int:
     if response != PAYLOAD:
         print("FAIL: payload mismatch", file=sys.stderr)
         return 1
-    print("SUCCESS: UDP reply returned through the Wi-Fi UDP tunnel and TUN")
+    print("SUCCESS: UDP reply returned over wired UART and the Pi TUN")
     return 0
 
 
