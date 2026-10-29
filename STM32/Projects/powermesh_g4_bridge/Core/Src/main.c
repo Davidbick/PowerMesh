@@ -199,7 +199,7 @@ int main(void)
       100U
   );
 
-/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
   /* Initialize led */
   BSP_LED_Init(LED_GREEN);
@@ -229,7 +229,7 @@ int main(void)
         last_blink_ms = now;
         (void)BSP_LED_Toggle(LED_GREEN);
     }
-      }
+  }
   /* USER CODE END 3 */
 }
 

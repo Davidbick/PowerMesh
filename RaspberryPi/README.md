@@ -87,7 +87,7 @@ ip -6 route get fd00:706d::2
 Start the TUN/UART bridge:
 
 ```bash
-RaspberryPi/.venv/bin/python \
+sudo RaspberryPi/.venv/bin/python \
     RaspberryPi/tun_uart_bridge.py \
     /dev/ttyACM0
 ```
@@ -123,7 +123,7 @@ cd ~/PowerMesh
 
 sudo bash RaspberryPi/setup_tun.sh
 
-RaspberryPi/.venv/bin/python \
+sudo RaspberryPi/.venv/bin/python \
     RaspberryPi/tun_uart_bridge.py \
     /dev/ttyACM0
 ```
