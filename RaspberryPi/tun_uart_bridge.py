@@ -100,7 +100,6 @@ def main():
 
     try:
         while True:
-           
             readable, _, _ = select.select(
                 [
                     tun_fd,
@@ -111,7 +110,7 @@ def main():
                 1.0,
             )
 
-            # Trigger a service restart if the STM32 disappears.
+            # Exit on disconnect so a service manager can restart the bridge.
             if not os.path.exists(args.port):
                 raise serial.SerialException(
                     f"STM32 serial device disconnected: {args.port}"

@@ -1,12 +1,12 @@
 # PowerMesh STM32 UART Bring-Up
 
-This STM32 project provides the initial PowerMesh UART transport used between the Raspberry Pi gateway and the STM32.
+The STM32F446RE forwards framed IPv6 packets between the Raspberry Pi and the downstream STM32G474RE without interpreting Matter commands.
 
-It implements a simple framed UART protocol with payload length, sequence number, and CRC checking.
+Both UART connections use framed packets with a payload length, sequence number, and CRC validation.
 
 ## UART Configuration
 
-The project uses USART2 with:
+USART2 (Pi connection) and USART1 (G4 connection) both use:
 
 ```text
 Baud:       115200
@@ -16,7 +16,7 @@ Stop bits:  1
 Flow ctrl:  None
 ```
 
-On the Nucleo board, USART2 is available through the ST-Link USB virtual COM port.
+USART2 uses PA2/PA3 through the ST-LINK USB virtual COM port. USART1 uses PA9 (TX) and PA10 (RX) for the G4 link.
 
 ## PowerMesh Frame
 
@@ -48,6 +48,10 @@ Maximum payload:
 ```
 
 The payload is treated as raw data by the UART layer. For the PowerMesh IP transport, a `DATA` payload can contain one raw IPv6 packet.
+
+## Forwarding
+
+Both UARTs use DMA reception and queued transmission. Valid DATA frames are forwarded in either direction. ACK frames indicate local queue acceptance, not delivery to the final ESP32 endpoint.
 
 ## Build
 
@@ -91,6 +95,4 @@ Received ACK: sequence=1
 PASS
 ```
 
-This verifies that framed, bidirectional UART communication is working.
-
-The `ACK` confirms receipt of the PowerMesh UART frame. It is not a response to the contents of the payload itself.
+This test checks Pi-to-F4 framing and the local ACK. To verify downstream forwarding, test IPv6 connectivity with the G4 and ESP32 connected.

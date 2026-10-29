@@ -2,7 +2,7 @@
 
 This directory contains the Raspberry Pi side of the PowerMesh transport.
 
-It bridges Linux IPv6 traffic from a TUN interface to the STM32 using the existing PowerMesh UART framing protocol.
+It bridges Linux IPv6 traffic from a TUN interface to the STM32 gateway using the PowerMesh UART framing protocol.
 
 ## Setup
 
@@ -56,16 +56,10 @@ Then log out and back in or reboot.
 
 ## Create the TUN Interface
 
-Make the setup script executable once:
+Run the TUN setup script as root:
 
 ```bash
-chmod +x RaspberryPi/setup_tun.sh
-```
-
-Run:
-
-```bash
-./RaspberryPi/setup_tun.sh
+sudo bash RaspberryPi/setup_tun.sh
 ```
 
 This creates:
@@ -108,14 +102,17 @@ From another terminal on the Pi:
 ping -6 fd00:706d::2
 ```
 
-**The ping will not succeed yet because the STM32 does not currently generate an IPv6 reply.**
+With the F4, G4, and ESP32 powered and connected, the ESP32 should reply over the full wired path.
 
 The bridge should show:
 
 ```text
 TUN -> UART: seq=1, <bytes> bytes
 UART ACK: seq=1, status=0
+UART -> TUN: seq=1, <bytes> bytes
 ```
+
+The UART ACK confirms local frame acceptance; the returned IPv6 packet confirms end-to-end communication.
 
 ## Normal Use After Reboot
 
@@ -124,7 +121,7 @@ After rebooting the Pi:
 ```bash
 cd ~/PowerMesh
 
-./RaspberryPi/setup_tun.sh
+sudo bash RaspberryPi/setup_tun.sh
 
 RaspberryPi/.venv/bin/python \
     RaspberryPi/tun_uart_bridge.py \
@@ -145,12 +142,14 @@ git pull --ff-only
 PowerMesh currently supports:
 
 ```text
-Matter Server / Linux IPv6
-        ↓
-powermesh0 TUN
-        ↓
+Home Assistant / Matter Server
+        ↕
+Linux IPv6 / powermesh0 TUN
+        ↕
 Python TUN-UART bridge
-        ↓
-STM32
-        ↓
-UART ACK
+        ↕
+STM32F446RE (Pi-side UART forwarding)
+        ↕
+STM32G474RE (endpoint-side UART forwarding)
+        ↕
+ESP32-S3 (wired IPv6 / Matter light)

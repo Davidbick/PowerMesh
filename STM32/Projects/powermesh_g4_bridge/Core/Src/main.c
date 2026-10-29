@@ -149,55 +149,55 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-// Confirm DMA is configured for both UARTs.
-if (POWERMESH_LINK_UART->hdmarx == NULL ||
-    POWERMESH_LINK_UART->hdmatx == NULL ||
-    POWERMESH_ESP32_UART->hdmarx == NULL ||
-    POWERMESH_ESP32_UART->hdmatx == NULL)
-{
-    Error_Handler();
-}
+  // Confirm DMA is configured for both UARTs.
+  if (POWERMESH_LINK_UART->hdmarx == NULL ||
+      POWERMESH_LINK_UART->hdmatx == NULL ||
+      POWERMESH_ESP32_UART->hdmarx == NULL ||
+      POWERMESH_ESP32_UART->hdmatx == NULL)
+  {
+      Error_Handler();
+  }
 
-// Connect the shared router to the two G4 UART transports.
-if (!packet_router_init(
-        &router,
-        send_uart_frame,
-        &link_transport,
-        send_uart_frame,
-        &esp32_transport))
-{
-    Error_Handler();
-}
+  // Connect the shared router to the two G4 UART transports.
+  if (!packet_router_init(
+          &router,
+          send_uart_frame,
+          &link_transport,
+          send_uart_frame,
+          &esp32_transport))
+  {
+      Error_Handler();
+  }
 
-// Start F4 link reception on USART3.
-if (uart_transport_start(
-        &link_transport,
-        POWERMESH_LINK_UART,
-        on_uart_frame,
-        &link_port) != HAL_OK)
-{
-    Error_Handler();
-}
+  // Start F4 link reception on USART3.
+  if (uart_transport_start(
+          &link_transport,
+          POWERMESH_LINK_UART,
+          on_uart_frame,
+          &link_port) != HAL_OK)
+  {
+      Error_Handler();
+  }
 
-// Start ESP32 reception on USART1.
-if (uart_transport_start(
-        &esp32_transport,
-        POWERMESH_ESP32_UART,
-        on_uart_frame,
-        &esp32_port) != HAL_OK)
-{
-    Error_Handler();
-}
+  // Start ESP32 reception on USART1.
+  if (uart_transport_start(
+          &esp32_transport,
+          POWERMESH_ESP32_UART,
+          on_uart_frame,
+          &esp32_port) != HAL_OK)
+  {
+      Error_Handler();
+  }
 
-// Report successful initialization over ST-LINK.
-static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
+  // Report successful initialization over ST-LINK.
+  static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
 
-(void)HAL_UART_Transmit(
-    POWERMESH_DEBUG_UART,
-    boot_message,
-    sizeof(boot_message) - 1U,
-    100U
-);
+  (void)HAL_UART_Transmit(
+      POWERMESH_DEBUG_UART,
+      boot_message,
+      sizeof(boot_message) - 1U,
+      100U
+  );
 
 /* USER CODE END 2 */
 
@@ -216,22 +216,20 @@ static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
 
     /* USER CODE BEGIN 3 */
 
-// Process incoming UART data and DMA completions.
-uart_transport_poll(&link_transport);
-uart_transport_poll(&esp32_transport);
+    uart_transport_poll(&link_transport);
+    uart_transport_poll(&esp32_transport);
 
-// Move queued packets between the two transports.
-packet_router_poll(&router);
+    packet_router_poll(&router);
 
-// Keep the existing LED heartbeat.
-uint32_t now = HAL_GetTick();
+    // Toggle the status LED every 500 ms.
+    uint32_t now = HAL_GetTick();
 
-if ((uint32_t)(now - last_blink_ms) >= 500U)
-{
-    last_blink_ms = now;
-    (void)BSP_LED_Toggle(LED_GREEN);
-}
-  }
+    if ((uint32_t)(now - last_blink_ms) >= 500U)
+    {
+        last_blink_ms = now;
+        (void)BSP_LED_Toggle(LED_GREEN);
+    }
+      }
   /* USER CODE END 3 */
 }
 

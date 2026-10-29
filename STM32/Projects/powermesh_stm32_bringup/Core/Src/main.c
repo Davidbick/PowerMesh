@@ -183,22 +183,20 @@ int main(void)
   }
   /* USER CODE END 2 */
 
-    /* Infinite loop */
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-      /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 
-      // Process incoming UART data and DMA completions.
-      uart_transport_poll(&pi_transport);
-      uart_transport_poll(&remote_transport);
+    uart_transport_poll(&pi_transport);
+    uart_transport_poll(&remote_transport);
 
-      // Move queued packets between the two transports.
-      packet_router_poll(&router);
+    packet_router_poll(&router);
   }
-    /* USER CODE END 3 */
+  /* USER CODE END 3 */
 }
 
 /**
