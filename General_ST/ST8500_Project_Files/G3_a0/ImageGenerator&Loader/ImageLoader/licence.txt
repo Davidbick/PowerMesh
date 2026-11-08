@@ -1,0 +1,1 @@
+This software is distributed under the LGPL v3 and GPL v3 open source license.

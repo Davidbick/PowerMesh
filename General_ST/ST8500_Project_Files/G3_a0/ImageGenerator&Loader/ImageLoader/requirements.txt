@@ -1,0 +1,6 @@
+libscrc
+pyserial
+pywin32-ctypes
+pywin32
+argparse
+PySide6
