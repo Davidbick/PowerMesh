@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run "image_loader_st8500_gui_launcher.bat",0,True

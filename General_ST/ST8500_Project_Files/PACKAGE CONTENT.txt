@@ -1,0 +1,23 @@
+STSW-ST8500GH-2 v2 - Oct 2025
+
+The STSW-ST8500GH-2 package contains:
+
+- STM32 project for NUCLEO-G070RB
+	STM32_Application_for_ST8500_G3-PLC_Hybrid_v2.5.1.zip, including the AN5715, Release Note and the User Terminal guidelines in the "\NUCLEO-G070RB\Documents\" folder
+
+- G3-Hybrid FW packages
+	ST8500_G3_v19a065a0_6.3.12.zip (RF Frequency Hopping NOT available), including:
+	ST8500_G3_v1991966E_7.4.4.zip  (RF Frequency Hopping available),     including:
+	- G3 GUI (StPowerLineGui.exe) with the ST_G3-PLC_Hybrid_PLC&RF_GUI_quick_start_guide_rev9.pdf guide
+	- G3 images (PE and RTE) withe the ST8500 Image Loader v1.3.21.0
+	- G3 Trace parser (G3_TraceParser3.py python script)
+
+- STM32 FW upgrade tool
+	STM32_FW_upgrade.zip, contains two batch file that launch STM32CubeProgrammer to program the STM32 on the NUCLEO board of the kit (one for the coordinator, one for the device)
+
+- External Loader for STM32 SPI flash memory
+	ExternalLoader.zip, including a README.txt
+	
+Please check for updated versions at https://www.st.com/content/st_com/en/products/embedded-software/evaluation-tool-software/stsw-st8500gh-2.html
+
+Please Note: Depending on which version is loaded on ST8500, the STM32 project must be recompiled setting the COMPILE_7_X_VERSION define properly.  

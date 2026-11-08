@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<header image_type="cpu" validity="0xFFFFFFFE" entry="0x00050000" fw_encryption_status="cleartext" fw_encryption_seed="0x00000000">
+	<application_data value0="0xFFFFFFFF" value1="0xFFFFFFFF" value2="0xFFFFFFFF" value3="0xFFFFFFFF" value4="0xFFFFFFFF" value5="0xFFFFFFFF" value6="0xFFFFFFFF" value7="0x88FFFFFF">
+	</application_data>  
+	<aes_iv value0="0x01020304" value1="0x05060708" value2="0x09090909" value3="0x00002222">
+	</aes_iv>   
+	<aes_key value0="0x0" value1="0x0" value2="0x0" value3="0x0" value4="0x0" value5="0x0" value6="0x0" value7="0x0">
+	</aes_key>    
+</header>
+<section address="0x00050000" filename="ST8500_G3_v19a065a0_6.3.12.bin"></section>

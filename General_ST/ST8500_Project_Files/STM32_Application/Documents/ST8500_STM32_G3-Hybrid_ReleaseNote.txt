@@ -1,0 +1,159 @@
+STM32 Application for ST8500 G3-Hybrid Release note
+
+Purpose and scope
+This document contains the version 2.3.0 of the Release note for the STM32 Application for ST8500 G3-Hybrid.
+The purpose of this document is to illustrate the content of the package, the changes included in each release, the supported devices and EVAL boards, the summary of the tests performed with this release and the known issues and limitations.
+
+1. Contents
+The STM32 Application for ST8500 G3-Hybrid package contains the following items:
+* This document (Release note)
+* The source code of the example applications
+* The STM32CubeIDE IOC file used to generate the framework that contains the example applications
+
+
+2. Changes
+v2.5.1
+* HOSTIF-BAUDRATESET.Request/Confirm are deprecated from G3_6.3.12 G3_7.4.4
+* baudrate selected through HOSTIF-HWCONFIG.Request/Confirm.
+
+v2.5.0
+* G3_7_X support added (COMPILE_7_X_VERSION in settings.h)
+* Align to new RF configuration (for releases G3_6.3.8/G3_7.4.0 and successive)
+* Frequency Hopping support added (ENABLE_FREQUENCY_HOPPING in settings.h)
+* G3 configuration reworked (attributes table removed)
+* FastRestore and GMK update support modified (FastRestore data saved in STM32 Embedded Flash) 
+* mem_pool mechanism improved
+* Keep-Alive bug fixed
+* all .ioc migrated to CubeMX6.15
+
+v2.3.0
+* Porting to NUCLEO-G474RE added
+* Porting to NUCLEO-L476RG added
+* Restructured file organization (added common folder used by all three projects)
+* Code generation now handled by STM32CubeIDE
+* Added Boot Client implementation
+* Revisited Re-keying, improving its robustness in case of bootstraps at the same time (Boot Server)
+* Added Last Gasp feature
+* Added Fast Restore feature
+* Added multicast test
+* Added system reset feature
+* Improved PAN-sorting
+* Added Event notifications
+* Extended MAC test, now possible to test only a device with terminal command 'EXT_ADDR.TYPE.MSG_N'
+* Fixed MAC test bugs
+* Improved FSM triggering mechanism
+* Improved co-existence of Keep-Alive and other communication modules
+* 'User IF FSM' renamed to 'User Terminal'
+* Removed UDP connection modification menu (due to limited utility)
+* Removed ENABLE_CUSTOM_RF_FREQUENCY, added USE_STANDARD_ETSI_RF and USE_STANDARD_FCC_RF instead
+* Minor bugfixing/refactoring
+* Migrated to STM32CubeMxCube version 6.9.2
+
+v2.0.6
+* Porting to the new EVLKST8500GH-2
+* Added new External Loader for the new kit
+* Removed SW passthrough (it is now implemented in HW)
+* Switch SW102 now selects the bandplac (CENA/FCC)
+* Added Modbus and FAT FS for testing
+* Minor improvements to SPI FLASH drivers, changed SPI polarity (CPOL, CPHA)
+* Optimizazions and minor bugfixes
+* Refactoring/renaming
+* Migrated to STM32CubeMxCube version 6.8.1
+
+v1.8.5
+* Added MAC test feature (PLC and RF)
+* Fixed bug that caused parsing error on STMCubeProgrammer V2.12.0
+* Migrated to STM32CubeMxCube version 6.8.0
+
+v1.7.5
+* Added possibility to add/remove features inside "settings.h"
+* Added boot server module: possibility to move the boot server at application level, running in ADP_IPV6 mode
+* Added Re-keying feature with roll-back/abort (only with boot server at application level)
+* Added device connection/disconnection feature
+* Added coordinator kick feature
+* Optimized/changed conf module FSM
+* Improved Keep-Alive feature
+* Improved debug prints settings, now it is possible to select the verbosity level
+* Reworked and improved terminal with colors
+* Pansort module merged with boot module
+* Restructured files/folders
+* Improved task communication
+* Added reception HIF task for HIF UART reception
+* Added HIF baudarate configuration at startup (G3 task)
+* Reworked memory pools, now used for all G3 messages
+
+v1.6.5
+* Improved architecture, now based on synchronous events
+* Reworked task communication system
+* Added GMK update feature: makes the coordinator change the GMK of all devices in the PAN.
+* Removed "Send raw command" feature (can be re-enabled by setting ENABLE_RAW_COMMAND macro to 1).
+* Improved Keep-Alive kick mechanism, now kicks device without waiting for a third KA event.
+* Optimized Keep-Alive FSM
+* Fixed BOOT pins state in passthough, now they are kept in output mode
+* Several bug-fixes, optimizations, and code clean-ups
+
+v1.5.0
+Fixes and enhancements included are:
+* Port from IAR to STM32CubeIDE environment
+* Several bug-fixes and code clean-ups
+* Improved passthrough, to make it work at baudrate=921600
+* Fixed UDP test bug
+* Improved support for 915 MHz version
+* Added print timestamps
+* Improved platform info message format
+* Added connection setup menu/feature (test connection can be reconfigured now)
+* Added connection display menu/feature
+* Added connected device menu/feature
+* Added SFLASH memory erase menu/feature
+* Added user debug messages (can be enabled or disabled)
+* Added UDP image transfer menu/feature
+* Reworked keepalive to make it supports multiple devices at once
+* Reworked Host UART interface using DMA and a dedicated task to print on the terminal
+* Reworked HIF UART interface using DMA
+* Reworked task communication
+* Improved confirmation handling
+* Added loading mechanism to load the ST8500 image from UART at startup, using the STM32 serial FLASH memory
+* Several bug-fixes, optimizations, and code clean-ups
+
+v1.3.0
+Fix and enhancements included are:
+* Corrected a Keep Alive issue that occurred randomly after a while and that forced the node to leave the network
+* Added a 868 MHz / 915 MHz configuration in IAR project
+* Added a timeout on the UDP data loopback and multi basic UDP data tests
+* Added a terminal RX FIFO overflow detection
+
+v1.2.0
+Fix and enhancements included are:
+* Added a user task that allows launching a UDP responder via a serial terminal
+* More compatibility with HAL/LL
+* CubeMX file updated
+
+v1.1.0
+Fix and enhancements included are:
+* Port to NUCLEO-G070RB
+* Several bug-fixes and code clean-ups
+
+3. Supported targets and EVAL Boards
+The NUCLEO-G070RB included in the EVLKST8500GH868 and EVLKST8500GH915 kits.
+
+4. Test summary
+The following tests have been carried out:
+* 'Basic', several 'basic' and 'loopback' communication tests between two boards
+* 'UDP transfer' between two boards
+* 'SFLASH memory' erase
+* 'Keep-Alive' disconnection/reconnection
+* "Disconnection/reconnection/kick" commands
+* "White list/Black list" compilation options
+* 'Bootstrap' feature (Boot server on application)
+* 'Re-Keying' feature (Boot server on application)
+* 'Last Gasp' feature
+* 'Fast Restore' feature
+
+5. Known issues and limitations
+The package has no known issues and limitations.
+
+6. Tools
+The FW has been compiled with STM32CubeIDE v1.13.2.
+The External Loader has been tested with STM32CubeProgrammer 2.17.0
+
+Copyright STMicroelectronics. Reproduction and communication of this document is strictly prohibited unless specifically authorized in writing by STMicroelectronics. These are preliminary information. Details are subject to changes without notice.
