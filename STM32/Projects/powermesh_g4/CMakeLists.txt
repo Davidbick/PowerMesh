@@ -19,13 +19,22 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set the project name
-set(CMAKE_PROJECT_NAME powermesh_g4_bridge)
+set(CMAKE_PROJECT_NAME powermesh_g4)
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Core project settings
 project(${CMAKE_PROJECT_NAME})
+
+set(POWERMESH_ROLE "ENDPOINT" CACHE STRING "G4 board role")
+set_property(CACHE POWERMESH_ROLE PROPERTY STRINGS GATEWAY ENDPOINT)
+
+if(NOT POWERMESH_ROLE STREQUAL "GATEWAY" AND
+   NOT POWERMESH_ROLE STREQUAL "ENDPOINT")
+    message(FATAL_ERROR "Invalid PowerMesh role: ${POWERMESH_ROLE}")
+endif()
+
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
@@ -58,7 +67,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined symbols
+    POWERMESH_ROLE_${POWERMESH_ROLE}
 )
 
 # Remove wrong libob.a library dependency when using cpp files

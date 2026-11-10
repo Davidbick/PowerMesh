@@ -5,7 +5,7 @@ The current wired PowerMesh prototype uses two STM32 development boards. Both ac
 | Project | Role | Status |
 | --- | --- | --- |
 | `powermesh_stm32_bringup/` | STM32F446RE gateway, Raspberry Pi UART to remote UART | Active |
-| `powermesh_g4_bridge/` | STM32G474RE bridge, F4 UART to ESP32 UART | Active |
+| `powermesh_g4/` | STM32G474RE shared gateway and endpoint firmware | Active |
 | `stm32_to_st8500_test/` | Earlier standalone STM32F4 / ST8500 bootloader experiment | Historical; not the active transport |
 
 ## Build
@@ -18,6 +18,27 @@ From the active project directory:
 cmake --preset Debug
 cmake --build build/Debug
 ```
+
+### STM32G4 builds
+
+The G4 firmware supports two build configurations.
+
+Endpoint build:
+
+```bash
+cd STM32/Projects/powermesh_g4
+cmake --preset Debug
+cmake --build --preset Debug
+```
+
+Gateway build:
+
+```bash
+cmake --preset GatewayDebug
+cmake --build --preset GatewayDebug
+```
+
+Both configurations currently use the existing endpoint UART application. Gateway UART routing will be enabled after LPUART1 DMA is configured.
 
 Use each project's `.ioc` file when changing peripheral configuration. The active projects share code in `STM32/Common/`; neither has an integrated ST8500 modem driver yet.
 

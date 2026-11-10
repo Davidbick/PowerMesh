@@ -3,6 +3,10 @@
 
 #include "main.h"
 
+#if defined(POWERMESH_ROLE_GATEWAY) == defined(POWERMESH_ROLE_ENDPOINT)
+#error "Select exactly one PowerMesh G4 role"
+#endif
+
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef hlpuart1;
