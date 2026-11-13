@@ -30,6 +30,21 @@
       ],
       "runToEntryPoint": "main",
       "showDevDebugOutput": "raw"
+    },
+    {
+      "name": "Debug G4 Endpoint PLC",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/EndpointPLC/powermesh_g4.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "device": "STM32G474RE",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32g4x.cfg"
+      ],
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "raw"
     }
   ]
 }
