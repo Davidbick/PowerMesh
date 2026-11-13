@@ -54,12 +54,12 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
-static uart_transport_t link_transport;
-static uart_transport_t esp32_transport;
+static uart_transport_t gateway_transport;
+static uart_transport_t remote_transport;
 static packet_router_t router;
 
-static packet_port_t link_port = PACKET_PORT_GATEWAY;
-static packet_port_t esp32_port = PACKET_PORT_REMOTE;
+static packet_port_t gateway_port = PACKET_PORT_GATEWAY;
+static packet_port_t remote_port = PACKET_PORT_REMOTE;
 
 static uint32_t last_blink_ms = 0U;
 /* USER CODE END PV */
@@ -151,47 +151,43 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  // Confirm DMA is configured for both UARTs.
-  if (POWERMESH_LINK_UART->hdmarx == NULL ||
-      POWERMESH_LINK_UART->hdmatx == NULL ||
-      POWERMESH_ESP32_UART->hdmarx == NULL ||
-      POWERMESH_ESP32_UART->hdmatx == NULL)
+  if (POWERMESH_GATEWAY_UART->hdmarx == NULL ||
+      POWERMESH_GATEWAY_UART->hdmatx == NULL ||
+      POWERMESH_REMOTE_UART->hdmarx == NULL ||
+      POWERMESH_REMOTE_UART->hdmatx == NULL)
   {
       Error_Handler();
   }
 
-  // Connect the shared router to the two G4 UART transports.
   if (!packet_router_init(
           &router,
           send_uart_frame,
-          &link_transport,
+          &gateway_transport,
           send_uart_frame,
-          &esp32_transport))
+          &remote_transport))
   {
       Error_Handler();
   }
 
-  // Start F4 link reception on USART3.
   if (uart_transport_start(
-          &link_transport,
-          POWERMESH_LINK_UART,
+          &gateway_transport,
+          POWERMESH_GATEWAY_UART,
           on_uart_frame,
-          &link_port) != HAL_OK)
+          &gateway_port) != HAL_OK)
   {
       Error_Handler();
   }
 
-  // Start ESP32 reception on USART1.
   if (uart_transport_start(
-          &esp32_transport,
-          POWERMESH_ESP32_UART,
+          &remote_transport,
+          POWERMESH_REMOTE_UART,
           on_uart_frame,
-          &esp32_port) != HAL_OK)
+          &remote_port) != HAL_OK)
   {
       Error_Handler();
   }
 
-  // Report successful initialization over ST-LINK.
+#if defined(POWERMESH_ROLE_ENDPOINT)
   static uint8_t boot_message[] = "PowerMesh G4 ready\r\n";
 
   (void)HAL_UART_Transmit(
@@ -200,6 +196,7 @@ int main(void)
       sizeof(boot_message) - 1U,
       100U
   );
+#endif
 
   /* USER CODE END 2 */
 
@@ -218,8 +215,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    uart_transport_poll(&link_transport);
-    uart_transport_poll(&esp32_transport);
+    uart_transport_poll(&gateway_transport);
+    uart_transport_poll(&remote_transport);
 
     packet_router_poll(&router);
 
