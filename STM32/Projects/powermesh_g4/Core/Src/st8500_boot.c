@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#define ST8500_BOOT_BAUD        9600U
+#define ST8500_BOOT_UART_BAUD        9600U
 #define ST8500_UPLOAD_BAUD      115200U
 #define ST8500_CHUNK_SIZE       1024U
 #define ST8500_HEADER_SIZE      10U
@@ -307,7 +307,7 @@ static bool boot_once(UART_HandleTypeDef *uart)
     st8500_boot_stage = ST8500_BOOT_RESET;
     st8500_boot_bytes_written = 0U;
 
-    if (!set_baudrate(uart, ST8500_BOOT_BAUD))
+    if (!set_baudrate(uart, ST8500_BOOT_UART_BAUD))
     {
         return false;
     }
