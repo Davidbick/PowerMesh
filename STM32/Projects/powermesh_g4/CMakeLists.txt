@@ -35,6 +35,14 @@ if(NOT POWERMESH_ROLE STREQUAL "GATEWAY" AND
     message(FATAL_ERROR "Invalid PowerMesh role: ${POWERMESH_ROLE}")
 endif()
 
+set(POWERMESH_TRANSPORT "WIRED" CACHE STRING "PowerMesh transport")
+set_property(CACHE POWERMESH_TRANSPORT PROPERTY STRINGS WIRED ST8500)
+
+if(NOT POWERMESH_TRANSPORT STREQUAL "WIRED" AND
+   NOT POWERMESH_TRANSPORT STREQUAL "ST8500")
+    message(FATAL_ERROR "Invalid transport: ${POWERMESH_TRANSPORT}")
+endif()
+
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
@@ -68,6 +76,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     POWERMESH_ROLE_${POWERMESH_ROLE}
+    POWERMESH_TRANSPORT_${POWERMESH_TRANSPORT}
 )
 
 # Remove wrong libob.a library dependency when using cpp files
@@ -79,3 +88,42 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
 )
+
+if(POWERMESH_TRANSPORT STREQUAL "ST8500")
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+    set(ST8500_IMAGE_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../General_ST/ST8500_Project_Files/G3_a0/ImageGenerator&Loader"
+    )
+
+    set(ST8500_RTE_IMAGE
+        "${ST8500_IMAGE_DIR}/STARCOM_G3_RT_FW_r2_2_rc0_BA_key0.img"
+    )
+
+    set(ST8500_PE_IMAGE
+        "${ST8500_IMAGE_DIR}/ST8500_G3_v19a065a0_6.3.12.img"
+    )
+
+    set(ST8500_IMAGES_ASM
+        "${CMAKE_CURRENT_BINARY_DIR}/st8500_images.S"
+    )
+
+    add_custom_command(
+        OUTPUT "${ST8500_IMAGES_ASM}"
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/Tools/embed_images.py"
+            "${ST8500_RTE_IMAGE}"
+            "${ST8500_PE_IMAGE}"
+            "${ST8500_IMAGES_ASM}"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/Tools/embed_images.py"
+            "${ST8500_RTE_IMAGE}"
+            "${ST8500_PE_IMAGE}"
+        VERBATIM
+    )
+
+    target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+        Core/Src/st8500_boot.c
+        "${ST8500_IMAGES_ASM}"
+    )
+endif()

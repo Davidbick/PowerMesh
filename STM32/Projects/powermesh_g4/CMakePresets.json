@@ -13,7 +13,8 @@
             "inherits": "default",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "POWERMESH_ROLE": "ENDPOINT"
+                "POWERMESH_ROLE": "ENDPOINT",
+                "POWERMESH_TRANSPORT": "WIRED"
             }
         },
         {
@@ -21,7 +22,8 @@
             "inherits": "default",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "POWERMESH_ROLE": "GATEWAY"
+                "POWERMESH_ROLE": "GATEWAY",
+                "POWERMESH_TRANSPORT": "WIRED"
             }
         },
         {
@@ -29,7 +31,22 @@
             "inherits": "default",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "POWERMESH_ROLE": "ENDPOINT"
+                "POWERMESH_ROLE": "ENDPOINT",
+                "POWERMESH_TRANSPORT": "WIRED"
+            }
+        },
+        {
+            "name": "EndpointPLC",
+            "inherits": "Debug",
+            "cacheVariables": {
+                "POWERMESH_TRANSPORT": "ST8500"
+            }
+        },
+        {
+            "name": "GatewayPLC",
+            "inherits": "GatewayDebug",
+            "cacheVariables": {
+                "POWERMESH_TRANSPORT": "ST8500"
             }
         }
     ],
@@ -45,6 +62,14 @@
         {
             "name": "Release",
             "configurePreset": "Release"
+        },
+        {
+            "name": "EndpointPLC",
+            "configurePreset": "EndpointPLC"
+        },
+        {
+            "name": "GatewayPLC",
+            "configurePreset": "GatewayPLC"
         }
     ]
 }

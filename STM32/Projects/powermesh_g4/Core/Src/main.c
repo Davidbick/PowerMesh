@@ -24,6 +24,9 @@
 #include "powermesh_board.h"
 #include "uart_transport.h"
 #include "packet_router.h"
+#if defined(POWERMESH_TRANSPORT_ST8500)
+#include "st8500_boot.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,12 +57,14 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
+#if defined(POWERMESH_TRANSPORT_WIRED)
 static uart_transport_t gateway_transport;
 static uart_transport_t remote_transport;
 static packet_router_t router;
 
 static packet_port_t gateway_port = PACKET_PORT_GATEWAY;
 static packet_port_t remote_port = PACKET_PORT_REMOTE;
+#endif
 
 static uint32_t last_blink_ms = 0U;
 /* USER CODE END PV */
@@ -78,6 +83,7 @@ static void MX_LPUART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+#if defined(POWERMESH_TRANSPORT_WIRED)
 // Adapt the shared router interface to the G4 HAL UART transport.
 static bool send_uart_frame(
     void *context,
@@ -114,6 +120,7 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
         frame
     );
 }
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -151,6 +158,7 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+#if defined(POWERMESH_TRANSPORT_WIRED)
   if (POWERMESH_GATEWAY_UART->hdmarx == NULL ||
       POWERMESH_GATEWAY_UART->hdmatx == NULL ||
       POWERMESH_REMOTE_UART->hdmarx == NULL ||
@@ -197,6 +205,7 @@ int main(void)
       100U
   );
 #endif
+#endif
 
   /* USER CODE END 2 */
 
@@ -208,6 +217,18 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+#if defined(POWERMESH_TRANSPORT_ST8500)
+  if (!st8500_boot_load(POWERMESH_LINK_UART))
+  {
+      while (1)
+      {
+          (void)BSP_LED_Toggle(LED_GREEN);
+          HAL_Delay(150U);
+      }
+  }
+#endif
+
   while (1)
   {
 
@@ -215,10 +236,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+#if defined(POWERMESH_TRANSPORT_WIRED)
     uart_transport_poll(&gateway_transport);
     uart_transport_poll(&remote_transport);
 
     packet_router_poll(&router);
+#endif
 
     // Toggle the status LED every 500 ms.
     uint32_t now = HAL_GetTick();
