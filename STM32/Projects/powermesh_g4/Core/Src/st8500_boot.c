@@ -2,6 +2,7 @@
 #include "powermesh_board.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #define ST8500_BOOT_UART_BAUD        9600U
 #define ST8500_UPLOAD_BAUD      115200U
@@ -31,6 +32,55 @@ volatile uint32_t st8500_boot_bytes_written = 0U;
 volatile uint32_t st8500_boot_attempt = 0U;
 
 static uint8_t tx_frame[ST8500_CHUNK_SIZE + ST8500_FRAME_OVERHEAD];
+
+static void boot_log(const char *message)
+{
+#if defined(POWERMESH_ROLE_ENDPOINT)
+    char line[96];
+
+    int length = snprintf(
+        line,
+        sizeof(line),
+        "[ST8500] %s\r\n",
+        message
+    );
+
+    if (length > 0 && (size_t)length < sizeof(line))
+    {
+        (void)HAL_UART_Transmit(
+            &hlpuart1,
+            (uint8_t *)line,
+            (uint16_t)length,
+            100U
+        );
+    }
+#else
+    (void)message;
+#endif
+}
+
+static void boot_log_value(const char *message, uint32_t value)
+{
+#if defined(POWERMESH_ROLE_ENDPOINT)
+    char line[80];
+
+    int length = snprintf(
+        line,
+        sizeof(line),
+        "%s: %lu",
+        message,
+        (unsigned long)value
+    );
+
+    if (length > 0 && (size_t)length < sizeof(line))
+    {
+        boot_log(line);
+    }
+#else
+    (void)message;
+    (void)value;
+#endif
+}
 
 static uint32_t read_u32(const uint8_t *data)
 {
@@ -136,6 +186,7 @@ static bool send_command(
                 frame_length,
                 ST8500_TIMEOUT_MS) != HAL_OK)
         {
+            boot_log("UART transmission failed");
             return false;
         }
 
@@ -145,6 +196,7 @@ static bool send_command(
                 ST8500_HEADER_SIZE,
                 ST8500_TIMEOUT_MS) != HAL_OK)
         {
+            boot_log("Response timeout");
             return false;
         }
 
@@ -158,6 +210,7 @@ static bool send_command(
             response[5] != 0xFEU ||
             response_length != expected_length)
         {
+            boot_log("Invalid response header");
             return false;
         }
 
@@ -170,6 +223,7 @@ static bool send_command(
                 response_length + 2U,
                 ST8500_TIMEOUT_MS) != HAL_OK)
         {
+            boot_log("Response payload timeout");
             return false;
         }
 
@@ -182,6 +236,7 @@ static bool send_command(
 
         if (received_crc != calculated_crc)
         {
+            boot_log("Response CRC mismatch");
             return false;
         }
 
@@ -195,10 +250,12 @@ static bool send_command(
 
         if (response[6] != 0x01U)
         {
+            boot_log("Unexpected response status");
             return false;
         }
     }
 
+    boot_log("Command rejected after retries");
     return false;
 }
 
@@ -287,6 +344,17 @@ static bool load_image(
 
         offset += actual_length;
         st8500_boot_bytes_written += actual_length;
+
+        size_t uploaded = offset - header_length;
+
+        if ((uploaded % 32768U) == 0U ||
+            offset == image_size)
+        {
+            boot_log_value(
+                rte ? "RTE bytes uploaded" : "PE bytes uploaded",
+                (uint32_t)uploaded
+            );
+        }
     }
 
     st8500_boot_stage = rte ?
@@ -307,8 +375,11 @@ static bool boot_once(UART_HandleTypeDef *uart)
     st8500_boot_stage = ST8500_BOOT_RESET;
     st8500_boot_bytes_written = 0U;
 
+    boot_log("Resetting ST8500");
+
     if (!set_baudrate(uart, ST8500_BOOT_UART_BAUD))
     {
+        boot_log("Failed to configure 9600 baud");
         return false;
     }
 
@@ -329,6 +400,7 @@ static bool boot_once(UART_HandleTypeDef *uart)
     HAL_Delay(150U);
 
     st8500_boot_stage = ST8500_BOOT_PROBE;
+    boot_log("Checking ST8500 ROM bootloader");
 
     uint8_t mib = ST8500_MIB_VERSION;
 
@@ -340,10 +412,14 @@ static bool boot_once(UART_HandleTypeDef *uart)
             1U,
             4U))
     {
+        boot_log("MIB_GET failed");
         return false;
     }
 
+    boot_log("ST8500 ROM detected");
+
     st8500_boot_stage = ST8500_BOOT_BAUD;
+    boot_log("Switching to 115200 baud");
 
     const uint32_t baudrate = ST8500_UPLOAD_BAUD;
 
@@ -364,13 +440,17 @@ static bool boot_once(UART_HandleTypeDef *uart)
             sizeof(config),
             0U))
     {
+        boot_log("COM_INIT failed");
         return false;
     }
 
     if (!set_baudrate(uart, ST8500_UPLOAD_BAUD))
     {
+        boot_log("Failed to configure upload baud");
         return false;
     }
+
+    boot_log("Uploading RTE image");
 
     if (!load_image(
             uart,
@@ -379,8 +459,13 @@ static bool boot_once(UART_HandleTypeDef *uart)
             ST8500_RTE_TYPE,
             true))
     {
+        boot_log("RTE upload failed");
         return false;
     }
+
+    boot_log("RTE image started");
+
+    boot_log("Uploading PE image");
 
     if (!load_image(
             uart,
@@ -389,10 +474,15 @@ static bool boot_once(UART_HandleTypeDef *uart)
             ST8500_PE_TYPE,
             false))
     {
+        boot_log("PE upload failed");
         return false;
     }
 
+    boot_log("PE image started");
+
     st8500_boot_stage = ST8500_BOOT_IMAGES_STARTED;
+
+    boot_log("Both firmware images started successfully");
 
     return true;
 }
@@ -401,20 +491,29 @@ bool st8500_boot_load(UART_HandleTypeDef *uart)
 {
     if (uart == NULL)
     {
+        boot_log("Invalid UART");
         return false;
     }
+
+    boot_log("Starting automatic firmware loading");
 
     for (uint32_t i = 0U; i < ST8500_MAX_ATTEMPTS; i++)
     {
         st8500_boot_attempt = i + 1U;
 
+        boot_log_value("Boot attempt", st8500_boot_attempt);
+
         if (boot_once(uart))
         {
+            boot_log("Boot sequence complete");
             return true;
         }
 
+        boot_log("Boot attempt failed");
         HAL_Delay(200U);
     }
+
+    boot_log("BOOT FAILED: Maximum attempts reached");
 
     return false;
 }
