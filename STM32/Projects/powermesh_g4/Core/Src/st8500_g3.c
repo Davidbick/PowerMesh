@@ -1108,15 +1108,13 @@ bool st8500_g3_phy_send_once(st8500_g3_t *g3)
     );
 }
 
-bool st8500_g3_phy_set_tx(st8500_g3_t *g3)
+static bool phy_set_state(st8500_g3_t *g3, uint8_t state)
 {
     if (g3 == NULL || !g3->phy_test ||
         g3->state != ST8500_G3_PHY_READY)
     {
         return false;
     }
-
-    uint8_t state = 0x09U;
 
     return send_request(
         g3,
@@ -1127,4 +1125,14 @@ bool st8500_g3_phy_set_tx(st8500_g3_t *g3)
     ) &&
     g3->reply_length == 1U &&
     g3->reply[0] == 0U;
+}
+
+bool st8500_g3_phy_set_tx(st8500_g3_t *g3)
+{
+    return phy_set_state(g3, 0x09U);
+}
+
+bool st8500_g3_phy_set_rx(st8500_g3_t *g3)
+{
+    return phy_set_state(g3, 0x0AU);
 }

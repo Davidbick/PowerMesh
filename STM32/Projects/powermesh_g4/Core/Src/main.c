@@ -29,7 +29,9 @@
 
 // Temporary bench testing only. Disable for Pi communication.
 #define POWERMESH_JOIN_MONITOR
-#define POWERMESH_PHY_DIRECT_TX
+#define POWERMESH_PHY_DIRECT_TEST
+#define POWERMESH_PHY_TEST_FRAME_COUNT 3U
+#define POWERMESH_PHY_TEST_GAP_MS 200U
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
 #include "st8500_g3.h"
@@ -251,7 +253,8 @@ static void print_join_status(void)
 #endif
 
 #if defined(POWERMESH_TRANSPORT_ST8500) && \
-    (defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX))
+    (defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)) && \
+    !defined(POWERMESH_PHY_DIRECT_TEST)
 
 static void print_phy_status(void)
 {
@@ -450,55 +453,135 @@ int main(void)
 
 #if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
 
-#if defined(POWERMESH_PHY_TEST_TX)
-  const bool phy_transmit = true;
-#else
-  const bool phy_transmit = false;
-#endif
-
-#if defined(POWERMESH_PHY_TEST_TX) && defined(POWERMESH_PHY_DIRECT_TX)
-
+#if defined(POWERMESH_PHY_DIRECT_TEST)
   if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART))
   {
       Error_Handler();
   }
 
+#if defined(POWERMESH_PHY_TEST_TX)
+
   bool tx_ready = st8500_g3_phy_set_tx(&g3);
-  bool request_ok = tx_ready && st8500_g3_phy_send_once(&g3);
 
-  char line[220];
+  if (!tx_ready)
+  {
+      static uint8_t message[] = "[PHY TX] Failed to enter TX state\r\n";
+      (void)HAL_UART_Transmit(
+          &hlpuart1, message, sizeof(message) - 1U, 100U
+      );
+      Error_Handler();
+  }
 
+  static uint8_t start_message[] =
+      "[PHY TX] Ready | Sending 3 frames after 2 seconds\r\n";
+  (void)HAL_UART_Transmit(
+      &hlpuart1, start_message, sizeof(start_message) - 1U, 100U
+  );
+
+  HAL_Delay(2000U);
+
+  uint32_t successful = 0U;
+
+  for (uint32_t frame = 1U; frame <= POWERMESH_PHY_TEST_FRAME_COUNT; frame++)
+  {
+      bool host_ok = st8500_g3_phy_send_once(&g3);
+
+      bool phy_ok = host_ok && g3.reply_received &&
+          g3.reply_length == 5U && g3.reply[0] == 0U;
+
+      if (phy_ok)
+      {
+          successful++;
+      }
+
+      char line[220];
+      int length = snprintf(
+          line,
+          sizeof(line),
+          "[PHY TX] Frame=%lu | HostOK=%u | Reply=%u | Len=%u | "
+          "HostErr=0x%02X | Status=0x%02X | "
+          "PowerStart=%u | PowerEnd=%u | Thermal=0x%02X\r\n",
+          (unsigned long)frame,
+          host_ok ? 1U : 0U,
+          g3.reply_received ? 1U : 0U,
+          g3.reply_length,
+          g3.reply_received ? g3.reply_error : 0xFFU,
+          g3.reply_received && g3.reply_length >= 1U ?
+              g3.reply[0] : 0xFFU,
+          g3.reply_received && g3.reply_length >= 3U ?
+              g3.reply[2] : 0U,
+          g3.reply_received && g3.reply_length >= 4U ?
+              g3.reply[3] : 0U,
+          g3.reply_received && g3.reply_length >= 5U ?
+              g3.reply[4] : 0xFFU
+      );
+
+      if (length > 0 && (size_t)length < sizeof(line))
+      {
+          (void)HAL_UART_Transmit(
+              &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U
+          );
+      }
+
+      // Keep the 200 ms gap; thermal flags are reported, not a stop condition.
+      if (frame < POWERMESH_PHY_TEST_FRAME_COUNT)
+      {
+          HAL_Delay(POWERMESH_PHY_TEST_GAP_MS);
+      }
+  }
+
+  char summary[112];
+  int summary_length = snprintf(
+      summary,
+      sizeof(summary),
+      "[PHY TX] Complete | Success=%lu | Failed=%lu | HostCRC=%lu\r\n",
+      (unsigned long)successful,
+      (unsigned long)(POWERMESH_PHY_TEST_FRAME_COUNT - successful),
+      (unsigned long)g3.crc_errors
+  );
+
+  if (summary_length > 0 && (size_t)summary_length < sizeof(summary))
+  {
+      (void)HAL_UART_Transmit(
+          &hlpuart1, (uint8_t *)summary, (uint16_t)summary_length, 100U
+      );
+  }
+
+#else
+
+  bool rx_ready = st8500_g3_phy_set_rx(&g3);
+  char line[150];
   int length = snprintf(
       line,
       sizeof(line),
-      "[PHY DIRECT] TXReady=%u | HostOK=%u | Reply=%u | Len=%u | "
-      "HostErr=0x%02X | Status=0x%02X | "
-      "Events=%u | PowerStart=%u | PowerEnd=%u | "
-      "Thermal=0x%02X | Timeouts=%lu\r\n",
-      tx_ready ? 1U : 0U,
-      request_ok ? 1U : 0U,
+      "[PHY RX] RXReady=%u | Reply=%u | Status=0x%02X | Listening\r\n",
+      rx_ready ? 1U : 0U,
       g3.reply_received ? 1U : 0U,
-      g3.reply_length,
-      g3.reply_received ? g3.reply_error : 0xFFU,
-      g3.reply_length >= 1U ? g3.reply[0] : 0xFFU,
-      g3.reply_length >= 2U ? g3.reply[1] : 0U,
-      g3.reply_length >= 3U ? g3.reply[2] : 0U,
-      g3.reply_length >= 4U ? g3.reply[3] : 0U,
-      g3.reply_length >= 5U ? g3.reply[4] : 0xFFU,
-      (unsigned long)g3.command_timeouts
+      g3.reply_received && g3.reply_length >= 1U ?
+          g3.reply[0] : 0xFFU
   );
 
   if (length > 0 && (size_t)length < sizeof(line))
   {
       (void)HAL_UART_Transmit(
-          &hlpuart1,
-          (uint8_t *)line,
-          (uint16_t)length,
-          100U
+          &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U
       );
   }
 
+  if (!rx_ready)
+  {
+      Error_Handler();
+  }
+
+#endif
+
 #else
+
+#if defined(POWERMESH_PHY_TEST_TX)
+  const bool phy_transmit = true;
+#else
+  const bool phy_transmit = false;
+#endif
 
   if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART) ||
       !st8500_g3_phy_test_start(&g3, phy_transmit))
@@ -603,7 +686,39 @@ int main(void)
     st8500_g3_poll(&g3);
 
 #if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
-#if !(defined(POWERMESH_PHY_TEST_TX) && defined(POWERMESH_PHY_DIRECT_TX))
+#if defined(POWERMESH_PHY_DIRECT_TEST) && defined(POWERMESH_PHY_TEST_RX)
+
+    static uint32_t last_rx_report_ms = 0U;
+    static uint32_t last_rx_indications = 0U;
+    uint32_t tick = HAL_GetTick();
+
+    if (g3.phy_rx_indications != last_rx_indications ||
+        (uint32_t)(tick - last_rx_report_ms) >= 5000U)
+    {
+        last_rx_indications = g3.phy_rx_indications;
+        last_rx_report_ms = tick;
+
+        char line[160];
+        int length = snprintf(
+            line,
+            sizeof(line),
+            "[PHY RX] Indications=%lu | Matches=%lu | "
+            "HostCRC=%lu | UART=%lu\r\n",
+            (unsigned long)g3.phy_rx_indications,
+            (unsigned long)g3.phy_rx_matches,
+            (unsigned long)g3.crc_errors,
+            (unsigned long)g3.uart_errors
+        );
+
+        if (length > 0 && (size_t)length < sizeof(line))
+        {
+            (void)HAL_UART_Transmit(
+                &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U
+            );
+        }
+    }
+
+#elif !defined(POWERMESH_PHY_DIRECT_TEST)
 
     static uint32_t last_phy_report_ms = 0U;
     uint32_t phy_tick = HAL_GetTick();
@@ -613,6 +728,7 @@ int main(void)
         last_phy_report_ms = phy_tick;
         print_phy_status();
     }
+
 #endif
 
 #else
