@@ -10,10 +10,6 @@
 #define G3_CMD_TIMEOUT_MS        3000U
 #define G3_BOOT_WAIT_MS          250U
 
-#define G3_MODESET_REQ           0x02U
-#define G3_MODESET_CONF          0x03U
-#define G3_MODEGET_REQ           0x04U
-#define G3_MODEGET_CONF          0x05U
 #define G3_DBGTOOL_REQ           0x14U
 #define G3_DBGTOOL_CONF          0x15U
 #define G3_LIB_SET_REQ           0x22U
@@ -32,7 +28,7 @@
 #define G3_BOOT_SRV_SETPSK_CONF  0xC6U
 #define G3_ERROR_IND            0xFFU
 
-#define G3_MODE_BOOT            0x03U
+#define G3_MODE_IPV6_BOOT       0x05U
 #define G3_BAND_CEN_A           0x00U
 #define G3_ROLE_DEVICE          0x00U
 #define G3_ROLE_COORDINATOR     0x01U
@@ -626,23 +622,10 @@ bool st8500_g3_start(
 
     g3_log("G3 runtime detected");
 
-    uint8_t mode = G3_MODE_BOOT;
-
-    if (!send_request(
-            g3,
-            G3_MODESET_REQ,
-            G3_MODESET_CONF,
-            &mode,
-            1U))
-    {
-        g3_log("G3 MODESET failed");
-        goto failed;
-    }
-
     uint8_t reset[3] = {
         G3_BAND_CEN_A,
         coordinator ? G3_ROLE_COORDINATOR : G3_ROLE_DEVICE,
-        G3_MODE_BOOT
+        G3_MODE_IPV6_BOOT
     };
 
     g3->state = ST8500_G3_WAITING_FOR_NETWORK;
@@ -663,19 +646,6 @@ bool st8500_g3_start(
     if (!configure_network(g3))
     {
         g3_log("G3 network configuration failed");
-        goto failed;
-    }
-
-    if (!send_request(
-            g3,
-            G3_MODEGET_REQ,
-            G3_MODEGET_CONF,
-            NULL,
-            0U) ||
-        g3->reply_length < 1U ||
-        g3->reply[0] != G3_MODE_BOOT)
-    {
-        g3_log("G3 BOOT mode verification failed");
         goto failed;
     }
 
