@@ -30,7 +30,7 @@
 // Temporary bench testing only. Disable for Pi communication.
 #define POWERMESH_JOIN_MONITOR
 #define POWERMESH_PHY_DIRECT_TEST
-#define POWERMESH_PHY_TEST_FRAME_COUNT 3U
+#define POWERMESH_PHY_TEST_FRAME_COUNT 100U
 #define POWERMESH_PHY_TEST_GAP_MS 200U
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
@@ -473,7 +473,7 @@ int main(void)
   }
 
   static uint8_t start_message[] =
-      "[PHY TX] Ready | Sending 3 frames after 2 seconds\r\n";
+      "[PHY TX] Ready | Sending 100 frames after 2 seconds\r\n";
   (void)HAL_UART_Transmit(
       &hlpuart1, start_message, sizeof(start_message) - 1U, 100U
   );
@@ -729,7 +729,7 @@ int main(void)
                 case ST8500_PHY_RX_SHORT_HEADER: check = "ShortHeader"; break;
                 case ST8500_PHY_RX_BAD_LENGTH: check = "BadLength"; break;
                 case ST8500_PHY_RX_PATTERN_MISMATCH: check = "Mismatch"; break;
-                case ST8500_PHY_RX_MATCH: check = "Match"; break;
+                case ST8500_PHY_RX_MATCH: check = "Expected120Match"; break;
                 default: break;
             }
 
@@ -737,12 +737,13 @@ int main(void)
             int count = snprintf(
                 details, sizeof(details),
                 "[PHY RX DBG] HostErr=0x%02X | DataLen=%u | "
-                "PayloadLen=%u | Check=%s | FirstDiff=%u\r\n",
+                "PayloadLen=%u | Check=%s | FirstDiff=%u | ExtraBytes=%u\r\n",
                 debug->host_error,
                 debug->data_length,
                 debug->payload_length,
                 check,
-                debug->first_mismatch
+                debug->first_mismatch,
+                debug->extra_bytes
             );
 
             if (count > 0 && (size_t)count < sizeof(details))
@@ -750,6 +751,25 @@ int main(void)
                 (void)HAL_UART_Transmit(
                     &hlpuart1, (uint8_t *)details, (uint16_t)count, 100U
                 );
+            }
+
+            if (debug->extra_bytes == 1U)
+            {
+                char trailing[80];
+                int trailing_length = snprintf(
+                    trailing, sizeof(trailing),
+                    "[PHY RX DBG] ExtraByte[120]=0x%02X\r\n",
+                    debug->extra_byte
+                );
+
+                if (trailing_length > 0 &&
+                    (size_t)trailing_length < sizeof(trailing))
+                {
+                    (void)HAL_UART_Transmit(
+                        &hlpuart1, (uint8_t *)trailing,
+                        (uint16_t)trailing_length, 100U
+                    );
+                }
             }
 
             char bytes[128];

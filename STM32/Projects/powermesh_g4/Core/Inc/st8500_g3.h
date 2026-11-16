@@ -54,6 +54,8 @@ typedef struct
     uint8_t first_bytes[16];
     uint8_t first_bytes_length;
     uint16_t first_mismatch;
+    uint8_t extra_bytes;
+    uint8_t extra_byte;
     st8500_phy_rx_check_t check;
 } st8500_phy_rx_debug_t;
 

@@ -306,16 +306,29 @@ static void handle_frame(st8500_g3_t *g3)
                 debug->first_bytes_length
             );
 
-            if (debug->payload_length != G3_PHY_TEST_PAYLOAD_SIZE ||
+            // Accept 120 bytes or 120 plus one trailing byte.
+            if ((debug->payload_length != G3_PHY_TEST_PAYLOAD_SIZE &&
+                 debug->payload_length != G3_PHY_TEST_PAYLOAD_SIZE + 1U) ||
                 available != debug->payload_length)
             {
                 debug->check = ST8500_PHY_RX_BAD_LENGTH;
             }
             else
             {
+                debug->extra_bytes = (uint8_t)(
+                    debug->payload_length - G3_PHY_TEST_PAYLOAD_SIZE
+                );
+
+                if (debug->extra_bytes == 1U)
+                {
+                    debug->extra_byte =
+                        payload[G3_PHY_IND_HEADER_SIZE + G3_PHY_TEST_PAYLOAD_SIZE];
+                }
+
                 debug->check = ST8500_PHY_RX_MATCH;
 
-                for (uint16_t i = 0U; i < debug->payload_length; i++)
+                // Only compare the 120 transmitted payload bytes.
+                for (uint16_t i = 0U; i < G3_PHY_TEST_PAYLOAD_SIZE; i++)
                 {
                     if (payload[G3_PHY_IND_HEADER_SIZE + i] !=
                         phy_pattern[i % (sizeof(phy_pattern) - 1U)])
