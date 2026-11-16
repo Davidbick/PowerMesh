@@ -26,6 +26,7 @@
 #include "packet_router.h"
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
+#include "st8500_g3.h"
 #endif
 /* USER CODE END Includes */
 
@@ -64,6 +65,10 @@ static packet_router_t router;
 
 static packet_port_t gateway_port = PACKET_PORT_GATEWAY;
 static packet_port_t remote_port = PACKET_PORT_REMOTE;
+#endif
+
+#if defined(POWERMESH_TRANSPORT_ST8500)
+static st8500_g3_t g3;
 #endif
 
 static uint32_t last_blink_ms = 0U;
@@ -227,6 +232,24 @@ int main(void)
           HAL_Delay(150U);
       }
   }
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+  const bool coordinator = true;
+#else
+  const bool coordinator = false;
+#endif
+
+  if (!st8500_g3_start(
+          &g3,
+          POWERMESH_LINK_UART,
+          coordinator))
+  {
+      while (1)
+      {
+          (void)BSP_LED_Toggle(LED_GREEN);
+          HAL_Delay(150U);
+      }
+  }
 #endif
 
   while (1)
@@ -241,6 +264,10 @@ int main(void)
     uart_transport_poll(&remote_transport);
 
     packet_router_poll(&router);
+#endif
+
+#if defined(POWERMESH_TRANSPORT_ST8500)
+    st8500_g3_poll(&g3);
 #endif
 
     // Toggle the status LED every 500 ms.

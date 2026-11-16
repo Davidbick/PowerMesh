@@ -124,6 +124,7 @@ if(POWERMESH_TRANSPORT STREQUAL "ST8500")
 
     target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         Core/Src/st8500_boot.c
+        Core/Src/st8500_g3.c
         "${ST8500_IMAGES_ASM}"
     )
 endif()
