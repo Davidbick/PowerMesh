@@ -35,6 +35,7 @@
 #define G3_BOOT_SRV_STOP_REQ     0xB2U
 #define G3_BOOT_SRV_STOP_CONF    0xB3U
 #define G3_BOOT_SRV_JOIN_IND     0xB7U
+#define G3_BOOT_DEV_START_REQ    0xB8U
 #define G3_BOOT_DEV_START_CONF   0xB9U
 #define G3_BOOT_DEV_LEAVE_IND    0xBCU
 #define G3_BOOT_SRV_GETPSK_IND   0xC4U
@@ -905,9 +906,28 @@ static bool start_g3(
         goto failed;
     }
 
-    if (coordinator && !start_coordinator(g3))
+    if (coordinator)
     {
-        goto failed;
+        if (!start_coordinator(g3))
+        {
+            goto failed;
+        }
+    }
+    else
+    {
+        uint8_t start_type = 0U;  // Normal network join.
+
+        if (!send_frame(
+                g3,
+                G3_BOOT_DEV_START_REQ,
+                &start_type,
+                sizeof(start_type)))
+        {
+            g3_log("Failed to start G3 device bootstrap");
+            goto failed;
+        }
+
+        g3_log("G3 device bootstrap requested");
     }
 
     g3_log(coordinator ? "Coordinator configured" : "Device configured");

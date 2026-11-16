@@ -27,9 +27,11 @@
 #include <string.h>
 #include <stdio.h>
 
-// Temporary bench testing only. Disable for Pi communication.
+// Network joining diagnostics.
 #define POWERMESH_JOIN_MONITOR
-#define POWERMESH_PHY_DIRECT_TEST
+
+// Temporary PHY-only bench test, disabled for G3 network joining.
+// #define POWERMESH_PHY_DIRECT_TEST
 #define POWERMESH_PHY_TEST_FRAME_COUNT 100U
 #define POWERMESH_PHY_TEST_GAP_MS 200U
 #if defined(POWERMESH_TRANSPORT_ST8500)
