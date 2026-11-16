@@ -25,6 +25,10 @@
 #include "uart_transport.h"
 #include "packet_router.h"
 #include <string.h>
+#include <stdio.h>
+
+// Temporary bench testing only. Disable for Pi communication.
+#define POWERMESH_JOIN_MONITOR
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
 #include "st8500_g3.h"
@@ -193,6 +197,58 @@ static void on_g3_ipv6(
 }
 
 #endif
+#if defined(POWERMESH_TRANSPORT_ST8500) && defined(POWERMESH_JOIN_MONITOR)
+
+static void print_join_status(void)
+{
+    const char *status;
+
+    if (g3.state == ST8500_G3_FAILED)
+    {
+        status = "ERROR";
+    }
+    else if (g3.coordinator)
+    {
+        status = g3.joined_devices > 0U ?
+            "DEVICE JOINED" :
+            (g3.state == ST8500_G3_NETWORK_READY ?
+                "NETWORK STARTED, WAITING FOR DEVICE" :
+                "WAITING FOR NETWORK START");
+    }
+    else
+    {
+        status = g3.state == ST8500_G3_NETWORK_READY ?
+            "JOINED NETWORK" : "WAITING TO JOIN";
+    }
+
+    char line[160];
+
+    int length = snprintf(
+        line,
+        sizeof(line),
+        "[G3] %s | %s | PAN=0x%04X | Addr=0x%04X | Peers=%lu | CRC=%lu\r\n",
+        g3.coordinator ? "GATEWAY" : "ENDPOINT",
+        status,
+        g3.pan_id,
+        g3.short_addr,
+        (unsigned long)g3.joined_devices,
+        (unsigned long)g3.crc_errors
+    );
+
+    if (length > 0 && (size_t)length < sizeof(line) &&
+        hlpuart1.gState == HAL_UART_STATE_READY)
+    {
+        (void)HAL_UART_Transmit(
+            &hlpuart1,
+            (uint8_t *)line,
+            (uint16_t)length,
+            100U
+        );
+    }
+}
+
+#endif
+
 /* USER CODE END 0 */
 
 /**
@@ -392,6 +448,25 @@ int main(void)
     st8500_g3_poll(&g3);
     uart_transport_poll(local_transport);
     packet_router_poll(&router);
+
+#if defined(POWERMESH_JOIN_MONITOR)
+    static uint32_t last_report_ms = 0U;
+    static uint32_t last_peers = 0xFFFFFFFFU;
+    static st8500_g3_state_t last_state = ST8500_G3_STOPPED;
+
+    uint32_t tick = HAL_GetTick();
+
+    if (g3.state != last_state ||
+        g3.joined_devices != last_peers ||
+        (uint32_t)(tick - last_report_ms) >= 5000U)
+    {
+        print_join_status();
+
+        last_report_ms = tick;
+        last_state = g3.state;
+        last_peers = g3.joined_devices;
+    }
+#endif
 #endif
 
     // Toggle the status LED every 500 ms.
