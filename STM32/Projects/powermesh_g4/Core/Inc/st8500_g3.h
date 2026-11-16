@@ -72,6 +72,9 @@ typedef struct
     uint16_t short_addr;
     uint16_t last_joined_addr;
     uint32_t joined_devices;
+    uint32_t last_join_attempt_ms;
+    uint8_t join_attempts;
+    bool join_active;
     uint32_t crc_errors;
     uint32_t uart_errors;
     uint32_t command_timeouts;

@@ -27,9 +27,6 @@
 #include <string.h>
 #include <stdio.h>
 
-// Network joining diagnostics.
-#define POWERMESH_JOIN_MONITOR
-
 // Temporary PHY-only bench test, disabled for G3 network joining.
 // #define POWERMESH_PHY_DIRECT_TEST
 #define POWERMESH_PHY_TEST_FRAME_COUNT 100U

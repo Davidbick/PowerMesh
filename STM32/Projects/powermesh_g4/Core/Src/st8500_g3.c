@@ -9,6 +9,8 @@
 #define G3_FRAME_OVERHEAD        12U
 #define G3_CMD_TIMEOUT_MS        3000U
 #define G3_BOOT_WAIT_MS          250U
+#define G3_JOIN_RETRY_MS         90000U
+#define G3_JOIN_MAX_ATTEMPTS     4U
 
 #define G3_DBGTOOL_REQ           0x14U
 #define G3_DBGTOOL_CONF          0x15U
@@ -38,6 +40,7 @@
 #define G3_BOOT_DEV_START_REQ    0xB8U
 #define G3_BOOT_DEV_START_CONF   0xB9U
 #define G3_BOOT_DEV_LEAVE_IND    0xBCU
+#define G3_BOOT_DEV_PANSORT_IND  0xC1U
 #define G3_BOOT_SRV_GETPSK_IND   0xC4U
 #define G3_BOOT_SRV_SETPSK_REQ   0xC5U
 #define G3_BOOT_SRV_SETPSK_CONF  0xC6U
@@ -56,8 +59,6 @@
 #define G3_PIB_ACTIVE_KEY       0x00000022UL
 #define G3_PIB_EAP_PSK          0x00000094UL
 #define G3_PIB_COORD_ADDR       0x00000008UL
-#define G3_PIB_CHANNEL_CONFIG   0x00003202UL
-#define G3_CHANNEL_PLC_ONLY     0x00000003UL
 
 #define G3_PHY_TEST_COUNT       100U
 #define G3_PHY_TEST_DELAY_MS    200U
@@ -79,8 +80,8 @@ static const uint8_t g3_gmk[16] = {
 
 static void g3_log(const char *message)
 {
-#if defined(POWERMESH_ROLE_ENDPOINT)
-    char line[100];
+#if defined(POWERMESH_ROLE_ENDPOINT) || defined(POWERMESH_JOIN_MONITOR)
+    char line[192];
     int length = snprintf(line, sizeof(line), "[G3] %s\r\n", message);
 
     if (length > 0 && (size_t)length < sizeof(line))
@@ -99,7 +100,7 @@ static void g3_log(const char *message)
 
 static void g3_log_number(const char *message, uint32_t value)
 {
-#if defined(POWERMESH_ROLE_ENDPOINT)
+#if defined(POWERMESH_ROLE_ENDPOINT) || defined(POWERMESH_JOIN_MONITOR)
     char line[80];
     int length = snprintf(
         line,
@@ -116,6 +117,57 @@ static void g3_log_number(const char *message, uint32_t value)
 #else
     (void)message;
     (void)value;
+#endif
+}
+
+// Report the bootstrap stage without decoding variable-length indication bodies.
+static void log_boot_event(
+    uint8_t command,
+    uint8_t error,
+    const uint8_t *payload,
+    uint16_t length
+)
+{
+#if defined(POWERMESH_JOIN_MONITOR)
+    const char *event = NULL;
+
+    switch (command)
+    {
+        case G3_BOOT_SRV_START_CONF: event = "ServerStart"; break;
+        case G3_BOOT_SRV_JOIN_IND: event = "ServerJoin"; break;
+        case G3_BOOT_DEV_START_CONF: event = "DeviceStart"; break;
+        case G3_BOOT_DEV_LEAVE_IND: event = "DeviceLeave"; break;
+        case G3_BOOT_DEV_PANSORT_IND: event = "PANSort"; break;
+        case G3_BOOT_SRV_GETPSK_IND: event = "GetPSK"; break;
+        case G3_BOOT_SRV_SETPSK_CONF: event = "SetPSK"; break;
+        default: return;
+    }
+
+    char line[152];
+    int used = snprintf(
+        line, sizeof(line),
+        "BOOT %s (0x%02X) | HostErr=0x%02X | Len=%u | Data:",
+        event, command, error, length
+    );
+
+    for (uint16_t i = 0U; i < length && i < 8U &&
+         used > 0 && (size_t)used < sizeof(line); i++)
+    {
+        used += snprintf(
+            &line[used], sizeof(line) - (size_t)used,
+            " %02X", payload[i]
+        );
+    }
+
+    if (used > 0 && (size_t)used < sizeof(line))
+    {
+        g3_log(line);
+    }
+#else
+    (void)command;
+    (void)error;
+    (void)payload;
+    (void)length;
 #endif
 }
 
@@ -257,6 +309,28 @@ static bool send_frame(
     uint16_t payload_length
 );
 
+static bool request_device_join(st8500_g3_t *g3)
+{
+    uint8_t start_type = 0U;  // Normal network join.
+
+    g3->last_join_attempt_ms = HAL_GetTick();
+
+    if (!send_frame(
+            g3,
+            G3_BOOT_DEV_START_REQ,
+            &start_type,
+            sizeof(start_type)))
+    {
+        g3_log("Failed to send device bootstrap request");
+        return false;
+    }
+
+    g3->join_active = true;
+    g3->join_attempts++;
+    g3_log_number("Device join attempt", g3->join_attempts);
+    return true;
+}
+
 static void handle_frame(st8500_g3_t *g3)
 {
     const uint8_t *frame = g3->frame;
@@ -266,6 +340,11 @@ static void handle_frame(st8500_g3_t *g3)
     const uint8_t *payload = &frame[11];
     uint16_t data_length = payload_length != 0U ?
         payload_length - 1U : 0U;
+
+    if (!g3->phy_test)
+    {
+        log_boot_event(command, error, payload, data_length);
+    }
 
     // Capture PHY reception details without changing the matching rules.
     if (g3->phy_test && command == G3_PHY_DATA_IND)
@@ -423,6 +502,10 @@ static void handle_frame(st8500_g3_t *g3)
     else if (command == G3_BOOT_DEV_LEAVE_IND && !g3->coordinator)
     {
         g3->state = ST8500_G3_WAITING_FOR_NETWORK;
+        g3->pan_id = 0xFFFFU;
+        g3->short_addr = 0xFFFFU;
+        g3->join_attempts = 0U;
+        g3->last_join_attempt_ms = HAL_GetTick();
         g3_log("Device left G3 network");
     }
     else if (command == G3_ADP_DATA_CONF && g3->tx_pending)
@@ -599,6 +682,19 @@ void st8500_g3_poll(st8500_g3_t *g3)
         g3->tx_timeouts++;
         g3_log("G3 data confirmation timeout");
     }
+
+    // Allow the device to finish a discovery scan before retrying.
+    if (!g3->coordinator && !g3->phy_test &&
+        g3->join_active &&
+        g3->state == ST8500_G3_WAITING_FOR_NETWORK &&
+        !g3->waiting_reply &&
+        g3->join_attempts < G3_JOIN_MAX_ATTEMPTS &&
+        (uint32_t)(HAL_GetTick() - g3->last_join_attempt_ms) >=
+            G3_JOIN_RETRY_MS &&
+        g3->uart->gState == HAL_UART_STATE_READY)
+    {
+        (void)request_device_join(g3);
+    }
 }
 
 static bool send_frame(
@@ -729,11 +825,9 @@ static bool configure_network(st8500_g3_t *g3)
 {
     uint8_t pan_id[2];
     uint8_t coord_addr[2] = {0U, 0U};
-    uint8_t channel[4];
     uint8_t active_key = 0U;
 
     write_u16(pan_id, G3_PAN_ID);
-    write_u32(channel, G3_CHANNEL_PLC_ONLY);
 
     if (g3->coordinator)
     {
@@ -766,13 +860,7 @@ static bool configure_network(st8500_g3_t *g3)
         }
     }
 
-    return set_attribute(
-        g3,
-        G3_PIB_CHANNEL_CONFIG,
-        0U,
-        channel,
-        sizeof(channel)
-    );
+    return true;
 }
 
 static bool start_coordinator(st8500_g3_t *g3)
@@ -915,15 +1003,8 @@ static bool start_g3(
     }
     else
     {
-        uint8_t start_type = 0U;  // Normal network join.
-
-        if (!send_frame(
-                g3,
-                G3_BOOT_DEV_START_REQ,
-                &start_type,
-                sizeof(start_type)))
+        if (!request_device_join(g3))
         {
-            g3_log("Failed to start G3 device bootstrap");
             goto failed;
         }
 
