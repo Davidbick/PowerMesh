@@ -8,6 +8,14 @@
 
 #define ST8500_G3_RX_DMA_SIZE 2048U
 #define ST8500_G3_FRAME_SIZE 1664U
+#define ST8500_G3_MAX_IPV6_SIZE 1280U
+#define ST8500_G3_TX_FRAME_SIZE (ST8500_G3_MAX_IPV6_SIZE + 17U)
+
+typedef void (*st8500_g3_ipv6_callback_t)(
+    const uint8_t *packet,
+    uint16_t length,
+    void *context
+);
 
 typedef enum
 {
@@ -43,6 +51,23 @@ typedef struct
     uint8_t reply_error;
     uint8_t reply[64];
     uint16_t reply_length;
+
+    st8500_g3_ipv6_callback_t on_ipv6;
+    void *on_ipv6_context;
+
+    uint8_t tx_frame[ST8500_G3_TX_FRAME_SIZE];
+    uint8_t tx_handle;
+    uint8_t next_handle;
+    uint8_t last_tx_status;
+    bool tx_pending;
+    uint32_t tx_started_ms;
+
+    uint32_t tx_requested;
+    uint32_t tx_confirmed;
+    uint32_t tx_failed;
+    uint32_t tx_timeouts;
+    uint32_t rx_packets;
+    uint32_t rx_invalid;
 } st8500_g3_t;
 
 bool st8500_g3_start(
@@ -52,5 +77,17 @@ bool st8500_g3_start(
 );
 
 void st8500_g3_poll(st8500_g3_t *g3);
+
+void st8500_g3_set_receive_callback(
+    st8500_g3_t *g3,
+    st8500_g3_ipv6_callback_t callback,
+    void *context
+);
+
+bool st8500_g3_send_ipv6(
+    st8500_g3_t *g3,
+    const uint8_t *packet,
+    uint16_t length
+);
 
 #endif

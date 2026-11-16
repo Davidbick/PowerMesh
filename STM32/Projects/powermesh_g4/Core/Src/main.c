@@ -24,6 +24,7 @@
 #include "powermesh_board.h"
 #include "uart_transport.h"
 #include "packet_router.h"
+#include <string.h>
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
 #include "st8500_g3.h"
@@ -58,17 +59,17 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
-#if defined(POWERMESH_TRANSPORT_WIRED)
 static uart_transport_t gateway_transport;
 static uart_transport_t remote_transport;
 static packet_router_t router;
 
 static packet_port_t gateway_port = PACKET_PORT_GATEWAY;
 static packet_port_t remote_port = PACKET_PORT_REMOTE;
-#endif
 
 #if defined(POWERMESH_TRANSPORT_ST8500)
 static st8500_g3_t g3;
+static uart_frame_t g3_received_frame;
+static uint16_t g3_rx_sequence = 0U;
 #endif
 
 static uint32_t last_blink_ms = 0U;
@@ -88,7 +89,6 @@ static void MX_LPUART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-#if defined(POWERMESH_TRANSPORT_WIRED)
 // Adapt the shared router interface to the G4 HAL UART transport.
 static bool send_uart_frame(
     void *context,
@@ -125,6 +125,73 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
         frame
     );
 }
+
+#if defined(POWERMESH_TRANSPORT_ST8500)
+
+// Send the IPv6 payload through the G3 adaptation layer.
+static bool send_g3_frame(
+    void *context,
+    uint8_t type,
+    uint16_t sequence,
+    const uint8_t *payload,
+    uint16_t length
+)
+{
+    st8500_g3_t *modem = (st8500_g3_t *)context;
+    (void)sequence;
+
+    // PowerMesh ACKs are local to each transport.
+    if (type == UART_FRAME_TYPE_ACK)
+    {
+        return true;
+    }
+
+    if (type != UART_FRAME_TYPE_DATA)
+    {
+        return false;
+    }
+
+    return st8500_g3_send_ipv6(
+        modem,
+        payload,
+        length
+    );
+}
+
+// Forward received G3 IPv6 packets into the existing router.
+static void on_g3_ipv6(
+    const uint8_t *packet,
+    uint16_t length,
+    void *context
+)
+{
+    (void)context;
+
+    if (packet == NULL || length > UART_FRAME_MAX_PAYLOAD)
+    {
+        return;
+    }
+
+    g3_received_frame.version = UART_FRAME_VERSION;
+    g3_received_frame.type = UART_FRAME_TYPE_DATA;
+    g3_received_frame.sequence = g3_rx_sequence++;
+    g3_received_frame.length = length;
+
+    memcpy(g3_received_frame.payload, packet, length);
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+    packet_port_t source = PACKET_PORT_REMOTE;
+#else
+    packet_port_t source = PACKET_PORT_GATEWAY;
+#endif
+
+    (void)packet_router_receive(
+        &router,
+        source,
+        &g3_received_frame
+    );
+}
+
 #endif
 /* USER CODE END 0 */
 
@@ -250,6 +317,61 @@ int main(void)
           HAL_Delay(150U);
       }
   }
+
+  uart_transport_t *local_transport;
+  UART_HandleTypeDef *local_uart;
+  packet_port_t *local_port;
+  bool router_ready;
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+  local_transport = &gateway_transport;
+  local_uart = POWERMESH_GATEWAY_UART;
+  local_port = &gateway_port;
+
+  router_ready = packet_router_init(
+      &router,
+      send_uart_frame,
+      &gateway_transport,
+      send_g3_frame,
+      &g3
+  );
+#else
+  local_transport = &remote_transport;
+  local_uart = POWERMESH_REMOTE_UART;
+  local_port = &remote_port;
+
+  router_ready = packet_router_init(
+      &router,
+      send_g3_frame,
+      &g3,
+      send_uart_frame,
+      &remote_transport
+  );
+#endif
+
+  if (!router_ready)
+  {
+      Error_Handler();
+  }
+
+  // Clear UART data received during ST8500 firmware loading.
+  __HAL_UART_CLEAR_OREFLAG(local_uart);
+  __HAL_UART_SEND_REQ(local_uart, UART_RXDATA_FLUSH_REQUEST);
+
+  if (uart_transport_start(
+          local_transport,
+          local_uart,
+          on_uart_frame,
+          local_port) != HAL_OK)
+  {
+      Error_Handler();
+  }
+
+  st8500_g3_set_receive_callback(
+      &g3,
+      on_g3_ipv6,
+      NULL
+  );
 #endif
 
   while (1)
@@ -268,6 +390,8 @@ int main(void)
 
 #if defined(POWERMESH_TRANSPORT_ST8500)
     st8500_g3_poll(&g3);
+    uart_transport_poll(local_transport);
+    packet_router_poll(&router);
 #endif
 
     // Toggle the status LED every 500 ms.

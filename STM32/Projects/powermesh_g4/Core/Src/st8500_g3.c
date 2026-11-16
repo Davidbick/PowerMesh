@@ -16,6 +16,10 @@
 #define G3_LIB_SET_CONF          0x23U
 #define G3_LIB_SWRESET_REQ       0x24U
 #define G3_LIB_SWRESET_CONF      0x25U
+#define G3_ADP_DATA_REQ         0x80U
+#define G3_ADP_DATA_CONF        0x81U
+#define G3_ADP_DATA_IND         0x82U
+#define G3_DATA_TIMEOUT_MS      30000U
 #define G3_BOOT_SRV_START_REQ    0xB0U
 #define G3_BOOT_SRV_START_CONF   0xB1U
 #define G3_BOOT_SRV_STOP_REQ     0xB2U
@@ -28,7 +32,7 @@
 #define G3_BOOT_SRV_SETPSK_CONF  0xC6U
 #define G3_ERROR_IND            0xFFU
 
-#define G3_MODE_IPV6_BOOT       0x05U
+#define G3_MODE_BOOT            0x03U
 #define G3_BAND_CEN_A           0x00U
 #define G3_ROLE_DEVICE          0x00U
 #define G3_ROLE_COORDINATOR     0x01U
@@ -133,6 +137,91 @@ static uint16_t crc16_xmodem(const uint8_t *data, uint16_t length)
     return crc;
 }
 
+static bool valid_ipv6_packet(const uint8_t *packet, uint16_t length)
+{
+    if (packet == NULL || length < 40U ||
+        length > ST8500_G3_MAX_IPV6_SIZE ||
+        (packet[0] >> 4) != 6U)
+    {
+        return false;
+    }
+
+    uint16_t payload_length =
+        ((uint16_t)packet[4] << 8) | packet[5];
+
+    return (uint32_t)payload_length + 40U == length;
+}
+
+static void handle_adp_data_indication(
+    st8500_g3_t *g3,
+    const uint8_t *data,
+    uint16_t length
+)
+{
+    if (length < 14U)
+    {
+        g3->rx_invalid++;
+        return;
+    }
+
+    uint16_t nsdu_length = read_u16(data);
+    uint8_t address_mode = data[2];
+    uint16_t index = 5U;
+
+    if (address_mode == 2U)
+    {
+        index += 2U;
+    }
+    else if (address_mode == 3U)
+    {
+        index += 8U;
+    }
+    else if (address_mode != 0U)
+    {
+        g3->rx_invalid++;
+        return;
+    }
+
+    // LQI, phase, modulation type, scheme and 3-byte tone map.
+    index += 7U;
+
+    if (index >= length)
+    {
+        g3->rx_invalid++;
+        return;
+    }
+
+    uint8_t bc0_count = data[index++];
+
+    if (bc0_count > 6U ||
+        (uint32_t)index + bc0_count + 1U > length)
+    {
+        g3->rx_invalid++;
+        return;
+    }
+
+    // Skip the BC0 list and previous-hop medium.
+    index = (uint16_t)(index + bc0_count + 1U);
+
+    if (nsdu_length != (uint16_t)(length - index) ||
+        !valid_ipv6_packet(&data[index], nsdu_length))
+    {
+        g3->rx_invalid++;
+        return;
+    }
+
+    g3->rx_packets++;
+
+    if (g3->on_ipv6 != NULL)
+    {
+        g3->on_ipv6(
+            &data[index],
+            nsdu_length,
+            g3->on_ipv6_context
+        );
+    }
+}
+
 static bool send_frame(
     st8500_g3_t *g3,
     uint8_t command,
@@ -226,6 +315,47 @@ static void handle_frame(st8500_g3_t *g3)
     {
         g3->state = ST8500_G3_WAITING_FOR_NETWORK;
         g3_log("Device left G3 network");
+    }
+    else if (command == G3_ADP_DATA_CONF && g3->tx_pending)
+    {
+        if (error != 0U)
+        {
+            g3->tx_pending = false;
+            g3->last_tx_status = error;
+            g3->tx_failed++;
+            g3_log_number("G3 data interface error", error);
+        }
+        else if (data_length >= 3U &&
+                 payload[1] == g3->tx_handle)
+        {
+            g3->tx_pending = false;
+            g3->last_tx_status = payload[0];
+
+            if (payload[0] == 0U)
+            {
+                g3->tx_confirmed++;
+            }
+            else
+            {
+                g3->tx_failed++;
+                g3_log_number("G3 data TX failed", payload[0]);
+            }
+        }
+    }
+    else if (command == G3_ADP_DATA_IND)
+    {
+        if (error == 0U)
+        {
+            handle_adp_data_indication(
+                g3,
+                payload,
+                data_length
+            );
+        }
+        else
+        {
+            g3->rx_invalid++;
+        }
     }
     else if (command == G3_ERROR_IND)
     {
@@ -350,6 +480,15 @@ void st8500_g3_poll(st8500_g3_t *g3)
         );
 
         receive_byte(g3, byte);
+    }
+
+    if (g3->tx_pending &&
+        (uint32_t)(HAL_GetTick() - g3->tx_started_ms) >=
+            G3_DATA_TIMEOUT_MS)
+    {
+        g3->tx_pending = false;
+        g3->tx_timeouts++;
+        g3_log("G3 data confirmation timeout");
     }
 }
 
@@ -625,7 +764,7 @@ bool st8500_g3_start(
     uint8_t reset[3] = {
         G3_BAND_CEN_A,
         coordinator ? G3_ROLE_COORDINATOR : G3_ROLE_DEVICE,
-        G3_MODE_IPV6_BOOT
+        G3_MODE_BOOT
     };
 
     g3->state = ST8500_G3_WAITING_FOR_NETWORK;
@@ -660,4 +799,88 @@ bool st8500_g3_start(
 failed:
     g3->state = ST8500_G3_FAILED;
     return false;
+}
+
+void st8500_g3_set_receive_callback(
+    st8500_g3_t *g3,
+    st8500_g3_ipv6_callback_t callback,
+    void *context
+)
+{
+    if (g3 == NULL)
+    {
+        return;
+    }
+
+    g3->on_ipv6 = callback;
+    g3->on_ipv6_context = context;
+}
+
+bool st8500_g3_send_ipv6(
+    st8500_g3_t *g3,
+    const uint8_t *packet,
+    uint16_t length
+)
+{
+    if (g3 == NULL || g3->uart == NULL ||
+        g3->state != ST8500_G3_NETWORK_READY ||
+        g3->tx_pending || g3->waiting_reply ||
+        !valid_ipv6_packet(packet, length))
+    {
+        return false;
+    }
+
+    // Do not transmit before a device joins the coordinator.
+    if (g3->coordinator && g3->joined_devices == 0U)
+    {
+        return false;
+    }
+
+    if (g3->uart->gState != HAL_UART_STATE_READY)
+    {
+        return false;
+    }
+
+    uint8_t *frame = g3->tx_frame;
+    uint16_t payload_length = (uint16_t)(length + 5U);
+    uint16_t frame_length = (uint16_t)(length + 17U);
+    uint8_t handle = g3->next_handle++;
+
+    memset(frame, 0, G3_HEADER_SIZE);
+
+    frame[0] = G3_SYNC;
+    frame[1] = G3_SYNC;
+    frame[2] = G3_ADP_DATA_REQ;
+
+    write_u16(&frame[3], payload_length);
+
+    // ADPD-DATA.Request fields.
+    write_u16(&frame[10], length);
+    frame[12] = handle;
+    frame[13] = 1U;
+    frame[14] = 0U;
+
+    memcpy(&frame[15], packet, length);
+
+    uint16_t crc = crc16_xmodem(
+        frame,
+        (uint16_t)(frame_length - 2U)
+    );
+
+    write_u16(&frame[frame_length - 2U], crc);
+
+    if (HAL_UART_Transmit_DMA(
+            g3->uart,
+            frame,
+            frame_length) != HAL_OK)
+    {
+        return false;
+    }
+
+    g3->tx_handle = handle;
+    g3->tx_started_ms = HAL_GetTick();
+    g3->tx_pending = true;
+    g3->tx_requested++;
+
+    return true;
 }
