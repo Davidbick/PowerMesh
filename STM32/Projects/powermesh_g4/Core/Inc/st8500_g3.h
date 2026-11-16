@@ -34,6 +34,29 @@ typedef struct
     uint32_t duration_ms;
 } st8500_phy_stats_t;
 
+typedef enum
+{
+    ST8500_PHY_RX_NO_FRAME = 0,
+    ST8500_PHY_RX_HOST_ERROR,
+    ST8500_PHY_RX_SHORT_HEADER,
+    ST8500_PHY_RX_BAD_LENGTH,
+    ST8500_PHY_RX_PATTERN_MISMATCH,
+    ST8500_PHY_RX_MATCH
+} st8500_phy_rx_check_t;
+
+typedef struct
+{
+    uint8_t host_error;
+    uint16_t data_length;
+    uint16_t payload_length;
+    uint8_t header_bytes[8];
+    uint8_t header_bytes_length;
+    uint8_t first_bytes[16];
+    uint8_t first_bytes_length;
+    uint16_t first_mismatch;
+    st8500_phy_rx_check_t check;
+} st8500_phy_rx_debug_t;
+
 typedef struct
 {
     UART_HandleTypeDef *uart;
@@ -42,6 +65,7 @@ typedef struct
     bool phy_test;
     uint32_t phy_rx_indications;
     uint32_t phy_rx_matches;
+    st8500_phy_rx_debug_t phy_rx_debug;
     uint16_t pan_id;
     uint16_t short_addr;
     uint16_t last_joined_addr;

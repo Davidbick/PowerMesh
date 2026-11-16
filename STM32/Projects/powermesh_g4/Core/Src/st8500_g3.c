@@ -266,32 +266,67 @@ static void handle_frame(st8500_g3_t *g3)
     uint16_t data_length = payload_length != 0U ?
         payload_length - 1U : 0U;
 
-    // Count received PHY frames and verify the test pattern.
+    // Capture PHY reception details without changing the matching rules.
     if (g3->phy_test && command == G3_PHY_DATA_IND)
     {
+        st8500_phy_rx_debug_t *debug = &g3->phy_rx_debug;
+
         g3->phy_rx_indications++;
+        memset(debug, 0, sizeof(*debug));
 
-        if (error == 0U &&
-            data_length >= G3_PHY_IND_HEADER_SIZE)
+        debug->host_error = error;
+        debug->data_length = data_length;
+        debug->payload_length = 0xFFFFU;  // Not present if header is short.
+        debug->first_mismatch = 0xFFFFU;
+
+        debug->header_bytes_length = data_length < sizeof(debug->header_bytes) ?
+            (uint8_t)data_length : sizeof(debug->header_bytes);
+        memcpy(debug->header_bytes, payload, debug->header_bytes_length);
+
+        if (error != 0U)
         {
-            uint16_t received_length = read_u16(&payload[225]);
+            debug->check = ST8500_PHY_RX_HOST_ERROR;
+        }
+        else if (data_length < G3_PHY_IND_HEADER_SIZE)
+        {
+            debug->check = ST8500_PHY_RX_SHORT_HEADER;
+        }
+        else
+        {
+            debug->payload_length = read_u16(&payload[225]);
 
-            if (received_length == G3_PHY_TEST_PAYLOAD_SIZE &&
-                data_length == G3_PHY_IND_HEADER_SIZE + received_length)
+            uint16_t available = (uint16_t)(
+                data_length - G3_PHY_IND_HEADER_SIZE
+            );
+            debug->first_bytes_length = available < sizeof(debug->first_bytes) ?
+                (uint8_t)available : sizeof(debug->first_bytes);
+            memcpy(
+                debug->first_bytes,
+                &payload[G3_PHY_IND_HEADER_SIZE],
+                debug->first_bytes_length
+            );
+
+            if (debug->payload_length != G3_PHY_TEST_PAYLOAD_SIZE ||
+                available != debug->payload_length)
             {
-                bool matches = true;
+                debug->check = ST8500_PHY_RX_BAD_LENGTH;
+            }
+            else
+            {
+                debug->check = ST8500_PHY_RX_MATCH;
 
-                for (uint16_t i = 0U; i < received_length; i++)
+                for (uint16_t i = 0U; i < debug->payload_length; i++)
                 {
                     if (payload[G3_PHY_IND_HEADER_SIZE + i] !=
                         phy_pattern[i % (sizeof(phy_pattern) - 1U)])
                     {
-                        matches = false;
+                        debug->first_mismatch = i;
+                        debug->check = ST8500_PHY_RX_PATTERN_MISMATCH;
                         break;
                     }
                 }
 
-                if (matches)
+                if (debug->check == ST8500_PHY_RX_MATCH)
                 {
                     g3->phy_rx_matches++;
                 }

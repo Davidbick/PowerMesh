@@ -692,8 +692,9 @@ int main(void)
     static uint32_t last_rx_indications = 0U;
     uint32_t tick = HAL_GetTick();
 
-    if (g3.phy_rx_indications != last_rx_indications ||
-        (uint32_t)(tick - last_rx_report_ms) >= 5000U)
+    bool new_frame = g3.phy_rx_indications != last_rx_indications;
+
+    if (new_frame || (uint32_t)(tick - last_rx_report_ms) >= 5000U)
     {
         last_rx_indications = g3.phy_rx_indications;
         last_rx_report_ms = tick;
@@ -715,6 +716,84 @@ int main(void)
             (void)HAL_UART_Transmit(
                 &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U
             );
+        }
+
+        if (new_frame)
+        {
+            const st8500_phy_rx_debug_t *debug = &g3.phy_rx_debug;
+            const char *check = "Unknown";
+
+            switch (debug->check)
+            {
+                case ST8500_PHY_RX_HOST_ERROR: check = "HostError"; break;
+                case ST8500_PHY_RX_SHORT_HEADER: check = "ShortHeader"; break;
+                case ST8500_PHY_RX_BAD_LENGTH: check = "BadLength"; break;
+                case ST8500_PHY_RX_PATTERN_MISMATCH: check = "Mismatch"; break;
+                case ST8500_PHY_RX_MATCH: check = "Match"; break;
+                default: break;
+            }
+
+            char details[160];
+            int count = snprintf(
+                details, sizeof(details),
+                "[PHY RX DBG] HostErr=0x%02X | DataLen=%u | "
+                "PayloadLen=%u | Check=%s | FirstDiff=%u\r\n",
+                debug->host_error,
+                debug->data_length,
+                debug->payload_length,
+                check,
+                debug->first_mismatch
+            );
+
+            if (count > 0 && (size_t)count < sizeof(details))
+            {
+                (void)HAL_UART_Transmit(
+                    &hlpuart1, (uint8_t *)details, (uint16_t)count, 100U
+                );
+            }
+
+            char bytes[128];
+            int pos = snprintf(bytes, sizeof(bytes), "[PHY RX DBG] Header8:");
+
+            for (uint8_t i = 0U; i < debug->header_bytes_length &&
+                 pos > 0 && (size_t)pos < sizeof(bytes); i++)
+            {
+                pos += snprintf(
+                    &bytes[pos], sizeof(bytes) - (size_t)pos,
+                    " %02X", debug->header_bytes[i]
+                );
+            }
+
+            if (pos > 0 && (size_t)pos < sizeof(bytes))
+            {
+                pos += snprintf(
+                    &bytes[pos], sizeof(bytes) - (size_t)pos,
+                    " | First16:"
+                );
+            }
+
+            for (uint8_t i = 0U; i < debug->first_bytes_length &&
+                 pos > 0 && (size_t)pos < sizeof(bytes); i++)
+            {
+                pos += snprintf(
+                    &bytes[pos], sizeof(bytes) - (size_t)pos,
+                    " %02X", debug->first_bytes[i]
+                );
+            }
+
+            if (pos > 0 && (size_t)pos < sizeof(bytes))
+            {
+                pos += snprintf(
+                    &bytes[pos], sizeof(bytes) - (size_t)pos, "\r\n"
+                );
+            }
+
+            if (pos > 0 && (size_t)pos < sizeof(bytes))
+            {
+                (void)HAL_UART_Transmit(
+                    &hlpuart1, (uint8_t *)bytes, (uint16_t)pos, 100U
+                );
+            }
         }
     }
 
