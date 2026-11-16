@@ -256,13 +256,58 @@ static void print_phy_status(void)
 {
     st8500_phy_stats_t stats;
 
-    if (!st8500_g3_phy_test_stats(&g3, &stats))
+    
+  if (!st8500_g3_phy_test_stats(&g3, &stats))
     {
-        static uint8_t message[] = "[PHY] Stats request failed\r\n";
-        (void)HAL_UART_Transmit(
-            &hlpuart1, message, sizeof(message) - 1U, 100U);
-        return;
-    }
+      char line[180];
+
+      int length = snprintf(
+          line,
+          sizeof(line),
+          "[PHY] Stats failed | Reply=%u | Len=%u | "
+          "Error=0x%02X | Timeouts=%lu | CRC=%lu | UART=%lu\r\n",
+          g3.reply_received ? 1U : 0U,
+          g3.reply_length,
+          g3.reply_error,
+          (unsigned long)g3.command_timeouts,
+          (unsigned long)g3.crc_errors,
+          (unsigned long)g3.uart_errors
+      );
+
+      if (length > 0 && (size_t)length < sizeof(line))
+      {
+          (void)HAL_UART_Transmit(
+              &hlpuart1,
+              (uint8_t *)line,
+              (uint16_t)length,
+              100U
+          );
+      }
+
+      char bytes[100];
+      int pos = snprintf(bytes, sizeof(bytes), "[PHY] Raw:");
+
+      for (uint16_t i = 0; i < g3.reply_length && i < 13U; i++)
+      {
+          pos += snprintf(
+              bytes + pos,
+              sizeof(bytes) - pos,
+              " %02X",
+              g3.reply[i]
+          );
+      }
+
+      pos += snprintf(bytes + pos, sizeof(bytes) - pos, "\r\n");
+
+      if (pos > 0 && (size_t)pos < sizeof(bytes))
+      {
+          HAL_UART_Transmit(
+              &hlpuart1, (uint8_t *)bytes, (uint16_t)pos, 100U
+          );
+      }
+
+      return;
+  }
 
 #if defined(POWERMESH_PHY_TEST_TX)
     const char *role = "TX";

@@ -1008,6 +1008,7 @@ bool st8500_g3_phy_test_start(
     );
 }
 
+
 bool st8500_g3_phy_test_stats(
     st8500_g3_t *g3,
     st8500_phy_stats_t *stats
@@ -1023,15 +1024,26 @@ bool st8500_g3_phy_test_stats(
             G3_TEST_GET_REQ,
             G3_TEST_GET_CONF,
             NULL,
-            0U) ||
-        g3->reply_length != 12U)
+            0U))
     {
         return false;
     }
 
-    stats->packets = read_u32(&g3->reply[0]);
-    stats->bytes = read_u32(&g3->reply[4]);
-    stats->duration_ms = read_u32(&g3->reply[8]);
+    uint8_t offset = 0U;
+
+    // This firmware returns a leading test-type byte.
+    if (g3->reply_length == 13U && g3->reply[0] == 1U)
+    {
+        offset = 1U;
+    }
+    else if (g3->reply_length != 12U)
+    {
+        return false;
+    }
+
+    stats->packets = read_u32(&g3->reply[offset]);
+    stats->bytes = read_u32(&g3->reply[offset + 4U]);
+    stats->duration_ms = read_u32(&g3->reply[offset + 8U]);
 
     return true;
 }
