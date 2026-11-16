@@ -29,6 +29,7 @@
 
 // Temporary bench testing only. Disable for Pi communication.
 #define POWERMESH_JOIN_MONITOR
+#define POWERMESH_PHY_DIRECT_TX
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
 #include "st8500_g3.h"
@@ -455,11 +456,55 @@ int main(void)
   const bool phy_transmit = false;
 #endif
 
+#if defined(POWERMESH_PHY_TEST_TX) && defined(POWERMESH_PHY_DIRECT_TX)
+
+  if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART))
+  {
+      Error_Handler();
+  }
+
+  bool request_ok = st8500_g3_phy_send_once(&g3);
+
+  char line[220];
+
+  int length = snprintf(
+      line,
+      sizeof(line),
+      "[PHY DIRECT] HostOK=%u | Reply=%u | Len=%u | "
+      "HostErr=0x%02X | Status=0x%02X | "
+      "Events=%u | PowerStart=%u | PowerEnd=%u | "
+      "Thermal=0x%02X | Timeouts=%lu\r\n",
+      request_ok ? 1U : 0U,
+      g3.reply_received ? 1U : 0U,
+      g3.reply_length,
+      g3.reply_received ? g3.reply_error : 0xFFU,
+      g3.reply_length >= 1U ? g3.reply[0] : 0xFFU,
+      g3.reply_length >= 2U ? g3.reply[1] : 0U,
+      g3.reply_length >= 3U ? g3.reply[2] : 0U,
+      g3.reply_length >= 4U ? g3.reply[3] : 0U,
+      g3.reply_length >= 5U ? g3.reply[4] : 0xFFU,
+      (unsigned long)g3.command_timeouts
+  );
+
+  if (length > 0 && (size_t)length < sizeof(line))
+  {
+      (void)HAL_UART_Transmit(
+          &hlpuart1,
+          (uint8_t *)line,
+          (uint16_t)length,
+          100U
+      );
+  }
+
+#else
+
   if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART) ||
       !st8500_g3_phy_test_start(&g3, phy_transmit))
   {
       Error_Handler();
   }
+
+#endif
 
 #else
 
@@ -556,6 +601,7 @@ int main(void)
     st8500_g3_poll(&g3);
 
 #if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
+#if !(defined(POWERMESH_PHY_TEST_TX) && defined(POWERMESH_PHY_DIRECT_TX))
 
     static uint32_t last_phy_report_ms = 0U;
     uint32_t phy_tick = HAL_GetTick();
@@ -565,6 +611,7 @@ int main(void)
         last_phy_report_ms = phy_tick;
         print_phy_status();
     }
+#endif
 
 #else
     uart_transport_poll(local_transport);

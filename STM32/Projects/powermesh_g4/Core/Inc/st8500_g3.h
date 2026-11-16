@@ -116,4 +116,6 @@ bool st8500_g3_phy_test_stats(
     st8500_phy_stats_t *stats
 );
 
+bool st8500_g3_phy_send_once(st8500_g3_t *g3);
+
 #endif

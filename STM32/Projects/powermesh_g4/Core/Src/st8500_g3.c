@@ -16,6 +16,8 @@
 #define G3_TEST_SET_CONF        0x0BU
 #define G3_TEST_GET_REQ         0x0CU
 #define G3_TEST_GET_CONF        0x0DU
+#define G3_PHY_DATA_REQ         0x40U
+#define G3_PHY_DATA_CONF        0x41U
 #define G3_PHY_DATA_IND         0x42U
 
 #define G3_LIB_SET_REQ           0x22U
@@ -1064,4 +1066,42 @@ bool st8500_g3_phy_test_stats(
     stats->duration_ms = read_u32(&g3->reply[offset + 8U]);
 
     return true;
+}
+
+bool st8500_g3_phy_send_once(st8500_g3_t *g3)
+{
+    if (g3 == NULL || !g3->phy_test ||
+        g3->state != ST8500_G3_PHY_READY)
+    {
+        return false;
+    }
+
+    uint8_t phy[34U + G3_PHY_TEST_PAYLOAD_SIZE] = {0};
+
+    phy[0] = G3_PHY_TEST_POWER;
+    phy[1] = 0U;       // Robust modulation
+    phy[2] = 0U;       // Differential modulation
+
+    // Pre-emphasis bytes 3 through 26 remain zero.
+    phy[27] = 0x3FU;   // CENELEC-A tone map
+
+    phy[30] = 0U;      // No ACK expected
+    phy[31] = 0U;      // Two RS blocks
+
+    write_u16(&phy[32], G3_PHY_TEST_PAYLOAD_SIZE);
+
+    for (uint16_t i = 0U; i < G3_PHY_TEST_PAYLOAD_SIZE; i++)
+    {
+        phy[34U + i] = phy_pattern[
+            i % (sizeof(phy_pattern) - 1U)
+        ];
+    }
+
+    return send_request(
+        g3,
+        G3_PHY_DATA_REQ,
+        G3_PHY_DATA_CONF,
+        phy,
+        sizeof(phy)
+    );
 }
