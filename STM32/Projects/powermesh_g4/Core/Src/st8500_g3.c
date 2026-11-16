@@ -18,6 +18,8 @@
 #define G3_TEST_GET_CONF        0x0DU
 #define G3_PHY_DATA_REQ         0x40U
 #define G3_PHY_DATA_CONF        0x41U
+#define G3_PHY_SETTRXSTATE_REQ  0x4AU
+#define G3_PHY_SETTRXSTATE_CONF 0x4BU
 #define G3_PHY_DATA_IND         0x42U
 
 #define G3_LIB_SET_REQ           0x22U
@@ -1104,4 +1106,25 @@ bool st8500_g3_phy_send_once(st8500_g3_t *g3)
         phy,
         sizeof(phy)
     );
+}
+
+bool st8500_g3_phy_set_tx(st8500_g3_t *g3)
+{
+    if (g3 == NULL || !g3->phy_test ||
+        g3->state != ST8500_G3_PHY_READY)
+    {
+        return false;
+    }
+
+    uint8_t state = 0x09U;
+
+    return send_request(
+        g3,
+        G3_PHY_SETTRXSTATE_REQ,
+        G3_PHY_SETTRXSTATE_CONF,
+        &state,
+        1U
+    ) &&
+    g3->reply_length == 1U &&
+    g3->reply[0] == 0U;
 }

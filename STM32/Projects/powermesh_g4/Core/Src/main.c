@@ -463,17 +463,19 @@ int main(void)
       Error_Handler();
   }
 
-  bool request_ok = st8500_g3_phy_send_once(&g3);
+  bool tx_ready = st8500_g3_phy_set_tx(&g3);
+  bool request_ok = tx_ready && st8500_g3_phy_send_once(&g3);
 
   char line[220];
 
   int length = snprintf(
       line,
       sizeof(line),
-      "[PHY DIRECT] HostOK=%u | Reply=%u | Len=%u | "
+      "[PHY DIRECT] TXReady=%u | HostOK=%u | Reply=%u | Len=%u | "
       "HostErr=0x%02X | Status=0x%02X | "
       "Events=%u | PowerStart=%u | PowerEnd=%u | "
       "Thermal=0x%02X | Timeouts=%lu\r\n",
+      tx_ready ? 1U : 0U,
       request_ok ? 1U : 0U,
       g3.reply_received ? 1U : 0U,
       g3.reply_length,

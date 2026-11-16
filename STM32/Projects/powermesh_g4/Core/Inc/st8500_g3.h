@@ -118,4 +118,6 @@ bool st8500_g3_phy_test_stats(
 
 bool st8500_g3_phy_send_once(st8500_g3_t *g3);
 
+bool st8500_g3_phy_set_tx(st8500_g3_t *g3);
+
 #endif
