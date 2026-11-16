@@ -48,6 +48,20 @@
             "cacheVariables": {
                 "POWERMESH_TRANSPORT": "ST8500"
             }
+        },
+        {
+            "name": "PHYTx",
+            "inherits": "GatewayPLC",
+            "cacheVariables": {
+                "POWERMESH_PHY_TEST": "TX"
+            }
+        },
+        {
+            "name": "PHYRx",
+            "inherits": "EndpointPLC",
+            "cacheVariables": {
+                "POWERMESH_PHY_TEST": "RX"
+            }
         }
     ],
     "buildPresets": [
@@ -70,6 +84,14 @@
         {
             "name": "GatewayPLC",
             "configurePreset": "GatewayPLC"
+        },
+        {
+            "name": "PHYTx",
+            "configurePreset": "PHYTx"
+        },
+        {
+            "name": "PHYRx",
+            "configurePreset": "PHYRx"
         }
     ]
 }

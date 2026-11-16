@@ -249,6 +249,52 @@ static void print_join_status(void)
 
 #endif
 
+#if defined(POWERMESH_TRANSPORT_ST8500) && \
+    (defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX))
+
+static void print_phy_status(void)
+{
+    st8500_phy_stats_t stats;
+
+    if (!st8500_g3_phy_test_stats(&g3, &stats))
+    {
+        static uint8_t message[] = "[PHY] Stats request failed\r\n";
+        (void)HAL_UART_Transmit(
+            &hlpuart1, message, sizeof(message) - 1U, 100U);
+        return;
+    }
+
+#if defined(POWERMESH_PHY_TEST_TX)
+    const char *role = "TX";
+#else
+    const char *role = "RX";
+#endif
+
+    char line[180];
+
+    int length = snprintf(
+        line,
+        sizeof(line),
+        "[PHY] %s | Packets=%lu | Bytes=%lu | Duration=%lums"
+        " | Indications=%lu | Matches=%lu | HostCRC=%lu\r\n",
+        role,
+        (unsigned long)stats.packets,
+        (unsigned long)stats.bytes,
+        (unsigned long)stats.duration_ms,
+        (unsigned long)g3.phy_rx_indications,
+        (unsigned long)g3.phy_rx_matches,
+        (unsigned long)g3.crc_errors
+    );
+
+    if (length > 0 && (size_t)length < sizeof(line))
+    {
+        (void)HAL_UART_Transmit(
+            &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U);
+    }
+}
+
+#endif
+
 /* USER CODE END 0 */
 
 /**
@@ -356,6 +402,22 @@ int main(void)
       }
   }
 
+#if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
+
+#if defined(POWERMESH_PHY_TEST_TX)
+  const bool phy_transmit = true;
+#else
+  const bool phy_transmit = false;
+#endif
+
+  if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART) ||
+      !st8500_g3_phy_test_start(&g3, phy_transmit))
+  {
+      Error_Handler();
+  }
+
+#else
+
 #if defined(POWERMESH_ROLE_GATEWAY)
   const bool coordinator = true;
 #else
@@ -429,6 +491,7 @@ int main(void)
       NULL
   );
 #endif
+#endif
 
   while (1)
   {
@@ -446,6 +509,19 @@ int main(void)
 
 #if defined(POWERMESH_TRANSPORT_ST8500)
     st8500_g3_poll(&g3);
+
+#if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
+
+    static uint32_t last_phy_report_ms = 0U;
+    uint32_t phy_tick = HAL_GetTick();
+
+    if ((uint32_t)(phy_tick - last_phy_report_ms) >= 5000U)
+    {
+        last_phy_report_ms = phy_tick;
+        print_phy_status();
+    }
+
+#else
     uart_transport_poll(local_transport);
     packet_router_poll(&router);
 
@@ -466,6 +542,7 @@ int main(void)
         last_state = g3.state;
         last_peers = g3.joined_devices;
     }
+#endif
 #endif
 #endif
 

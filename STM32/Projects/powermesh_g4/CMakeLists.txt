@@ -43,6 +43,18 @@ if(NOT POWERMESH_TRANSPORT STREQUAL "WIRED" AND
     message(FATAL_ERROR "Invalid transport: ${POWERMESH_TRANSPORT}")
 endif()
 
+set(POWERMESH_PHY_TEST "OFF" CACHE STRING "Temporary PHY test")
+set_property(CACHE POWERMESH_PHY_TEST PROPERTY STRINGS OFF TX RX)
+
+if(NOT POWERMESH_PHY_TEST MATCHES "^(OFF|TX|RX)$")
+    message(FATAL_ERROR "Invalid PHY test mode")
+endif()
+
+if(NOT POWERMESH_PHY_TEST STREQUAL "OFF" AND
+   NOT POWERMESH_TRANSPORT STREQUAL "ST8500")
+    message(FATAL_ERROR "PHY test requires ST8500 transport")
+endif()
+
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
@@ -78,6 +90,14 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     POWERMESH_ROLE_${POWERMESH_ROLE}
     POWERMESH_TRANSPORT_${POWERMESH_TRANSPORT}
 )
+
+if(POWERMESH_PHY_TEST STREQUAL "TX")
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        POWERMESH_PHY_TEST_TX)
+elseif(POWERMESH_PHY_TEST STREQUAL "RX")
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        POWERMESH_PHY_TEST_RX)
+endif()
 
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)

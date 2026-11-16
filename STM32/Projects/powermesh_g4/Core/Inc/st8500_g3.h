@@ -23,14 +23,25 @@ typedef enum
     ST8500_G3_CONFIGURING,
     ST8500_G3_WAITING_FOR_NETWORK,
     ST8500_G3_NETWORK_READY,
+    ST8500_G3_PHY_READY,
     ST8500_G3_FAILED
 } st8500_g3_state_t;
+
+typedef struct
+{
+    uint32_t packets;
+    uint32_t bytes;
+    uint32_t duration_ms;
+} st8500_phy_stats_t;
 
 typedef struct
 {
     UART_HandleTypeDef *uart;
     st8500_g3_state_t state;
     bool coordinator;
+    bool phy_test;
+    uint32_t phy_rx_indications;
+    uint32_t phy_rx_matches;
     uint16_t pan_id;
     uint16_t short_addr;
     uint16_t last_joined_addr;
@@ -88,6 +99,21 @@ bool st8500_g3_send_ipv6(
     st8500_g3_t *g3,
     const uint8_t *packet,
     uint16_t length
+);
+
+bool st8500_g3_start_phy(
+    st8500_g3_t *g3,
+    UART_HandleTypeDef *uart
+);
+
+bool st8500_g3_phy_test_start(
+    st8500_g3_t *g3,
+    bool transmit
+);
+
+bool st8500_g3_phy_test_stats(
+    st8500_g3_t *g3,
+    st8500_phy_stats_t *stats
 );
 
 #endif

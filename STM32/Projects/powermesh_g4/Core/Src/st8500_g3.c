@@ -12,6 +12,12 @@
 
 #define G3_DBGTOOL_REQ           0x14U
 #define G3_DBGTOOL_CONF          0x15U
+#define G3_TEST_SET_REQ         0x0AU
+#define G3_TEST_SET_CONF        0x0BU
+#define G3_TEST_GET_REQ         0x0CU
+#define G3_TEST_GET_CONF        0x0DU
+#define G3_PHY_DATA_IND         0x42U
+
 #define G3_LIB_SET_REQ           0x22U
 #define G3_LIB_SET_CONF          0x23U
 #define G3_LIB_SWRESET_REQ       0x24U
@@ -32,6 +38,7 @@
 #define G3_BOOT_SRV_SETPSK_CONF  0xC6U
 #define G3_ERROR_IND            0xFFU
 
+#define G3_MODE_PHY             0x00U
 #define G3_MODE_BOOT            0x03U
 #define G3_BAND_CEN_A           0x00U
 #define G3_ROLE_DEVICE          0x00U
@@ -46,6 +53,13 @@
 #define G3_PIB_COORD_ADDR       0x00000008UL
 #define G3_PIB_CHANNEL_CONFIG   0x00003202UL
 #define G3_CHANNEL_PLC_ONLY     0x00000003UL
+
+#define G3_PHY_TEST_COUNT       100U
+#define G3_PHY_TEST_DELAY_MS    200U
+#define G3_PHY_TEST_POWER       0x10U
+#define G3_PHY_IND_HEADER_SIZE  227U
+
+static const uint8_t phy_pattern[] = "POWERMESH_PHY_01";
 
 static const uint8_t g3_psk[16] = {
     0xABU, 0x10U, 0x34U, 0x11U, 0x45U, 0x11U, 0x1BU, 0xC3U,
@@ -102,6 +116,14 @@ static void g3_log_number(const char *message, uint32_t value)
 static uint16_t read_u16(const uint8_t *data)
 {
     return (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+}
+
+static uint32_t read_u32(const uint8_t *data)
+{
+    return (uint32_t)data[0] |
+           ((uint32_t)data[1] << 8) |
+           ((uint32_t)data[2] << 16) |
+           ((uint32_t)data[3] << 24);
 }
 
 static void write_u16(uint8_t *data, uint16_t value)
@@ -238,6 +260,28 @@ static void handle_frame(st8500_g3_t *g3)
     const uint8_t *payload = &frame[11];
     uint16_t data_length = payload_length != 0U ?
         payload_length - 1U : 0U;
+
+    // Count received PHY frames and verify the test pattern.
+    if (g3->phy_test && command == G3_PHY_DATA_IND)
+    {
+        g3->phy_rx_indications++;
+
+        if (error == 0U &&
+            data_length >= G3_PHY_IND_HEADER_SIZE)
+        {
+            uint16_t received_length = read_u16(&payload[225]);
+
+            if (received_length == sizeof(phy_pattern) - 1U &&
+                data_length == G3_PHY_IND_HEADER_SIZE + received_length &&
+                memcmp(
+                    &payload[G3_PHY_IND_HEADER_SIZE],
+                    phy_pattern,
+                    received_length) == 0)
+            {
+                g3->phy_rx_matches++;
+            }
+        }
+    }
 
     if (command == G3_BOOT_SRV_START_CONF && g3->coordinator &&
         error == 0U && data_length >= 1U)
@@ -699,10 +743,11 @@ static bool start_coordinator(st8500_g3_t *g3)
     return true;
 }
 
-bool st8500_g3_start(
+static bool start_g3(
     st8500_g3_t *g3,
     UART_HandleTypeDef *uart,
-    bool coordinator
+    bool coordinator,
+    bool phy_test
 )
 {
     if (g3 == NULL || uart == NULL || uart->hdmarx == NULL)
@@ -714,6 +759,7 @@ bool st8500_g3_start(
 
     g3->uart = uart;
     g3->coordinator = coordinator;
+    g3->phy_test = phy_test;
     g3->state = ST8500_G3_CONFIGURING;
     g3->pan_id = 0xFFFFU;
     g3->short_addr = 0xFFFFU;
@@ -764,7 +810,7 @@ bool st8500_g3_start(
     uint8_t reset[3] = {
         G3_BAND_CEN_A,
         coordinator ? G3_ROLE_COORDINATOR : G3_ROLE_DEVICE,
-        G3_MODE_BOOT
+        phy_test ? G3_MODE_PHY : G3_MODE_BOOT
     };
 
     g3->state = ST8500_G3_WAITING_FOR_NETWORK;
@@ -780,6 +826,13 @@ bool st8500_g3_start(
     {
         g3_log("G3 SWRESET failed");
         goto failed;
+    }
+
+    if (phy_test)
+    {
+        g3->state = ST8500_G3_PHY_READY;
+        g3_log("G3 PHY test ready");
+        return true;
     }
 
     if (!configure_network(g3))
@@ -799,6 +852,23 @@ bool st8500_g3_start(
 failed:
     g3->state = ST8500_G3_FAILED;
     return false;
+}
+
+bool st8500_g3_start(
+    st8500_g3_t *g3,
+    UART_HandleTypeDef *uart,
+    bool coordinator
+)
+{
+    return start_g3(g3, uart, coordinator, false);
+}
+
+bool st8500_g3_start_phy(
+    st8500_g3_t *g3,
+    UART_HandleTypeDef *uart
+)
+{
+    return start_g3(g3, uart, false, true);
 }
 
 void st8500_g3_set_receive_callback(
@@ -881,6 +951,87 @@ bool st8500_g3_send_ipv6(
     g3->tx_started_ms = HAL_GetTick();
     g3->tx_pending = true;
     g3->tx_requested++;
+
+    return true;
+}
+
+bool st8500_g3_phy_test_start(
+    st8500_g3_t *g3,
+    bool transmit
+)
+{
+    if (g3 == NULL || !g3->phy_test ||
+        g3->state != ST8500_G3_PHY_READY)
+    {
+        return false;
+    }
+
+    // TESTTYPE, MODE, RXTXCONF, NBPACKETS, DELAY.
+    uint8_t payload[11U + 34U + sizeof(phy_pattern) - 1U] = {0};
+
+    payload[0] = 1U;
+    payload[1] = 0U;
+    payload[2] = transmit ? 1U : 0U;
+
+    write_u32(&payload[3], transmit ? G3_PHY_TEST_COUNT : 0U);
+    write_u32(&payload[7], transmit ? G3_PHY_TEST_DELAY_MS : 0U);
+
+    uint16_t request_length = 11U;
+
+    if (transmit)
+    {
+        // G3PHY-DATA.Request begins after the test parameters.
+        uint8_t *phy = &payload[11];
+
+        phy[0] = G3_PHY_TEST_POWER;
+        phy[1] = 0U;       // Robust modulation
+        phy[2] = 0U;       // Differential modulation
+
+        // Bytes 3 through 26 contain zero pre-emphasis values.
+        phy[27] = 0x3FU;   // CENELEC-A tone map
+
+        phy[30] = 0U;      // No ACK expected
+        phy[31] = 0U;      // Two RS blocks
+
+        write_u16(&phy[32], sizeof(phy_pattern) - 1U);
+        memcpy(&phy[34], phy_pattern, sizeof(phy_pattern) - 1U);
+
+        request_length = sizeof(payload);
+    }
+
+    return send_request(
+        g3,
+        G3_TEST_SET_REQ,
+        G3_TEST_SET_CONF,
+        payload,
+        request_length
+    );
+}
+
+bool st8500_g3_phy_test_stats(
+    st8500_g3_t *g3,
+    st8500_phy_stats_t *stats
+)
+{
+    if (g3 == NULL || stats == NULL || !g3->phy_test)
+    {
+        return false;
+    }
+
+    if (!send_request(
+            g3,
+            G3_TEST_GET_REQ,
+            G3_TEST_GET_CONF,
+            NULL,
+            0U) ||
+        g3->reply_length != 12U)
+    {
+        return false;
+    }
+
+    stats->packets = read_u32(&g3->reply[0]);
+    stats->bytes = read_u32(&g3->reply[4]);
+    stats->duration_ms = read_u32(&g3->reply[8]);
 
     return true;
 }
