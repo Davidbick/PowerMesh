@@ -1005,7 +1005,7 @@ bool st8500_g3_phy_test_start(
         phy[27] = 0x3FU;   // CENELEC-A tone map
 
         phy[30] = 0U;      // No ACK expected
-        phy[31] = 0U;      // Two RS blocks
+        phy[31] = 1U;      // One RS block for CENELEC-A
 
         write_u16(&phy[32], G3_PHY_TEST_PAYLOAD_SIZE);
 
@@ -1086,7 +1086,7 @@ bool st8500_g3_phy_send_once(st8500_g3_t *g3)
     phy[27] = 0x3FU;   // CENELEC-A tone map
 
     phy[30] = 0U;      // No ACK expected
-    phy[31] = 0U;      // Two RS blocks
+    phy[31] = 1U;      // One RS block for CENELEC-A
 
     write_u16(&phy[32], G3_PHY_TEST_PAYLOAD_SIZE);
 
