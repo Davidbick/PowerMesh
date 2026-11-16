@@ -57,6 +57,7 @@
 #define G3_PHY_TEST_COUNT       100U
 #define G3_PHY_TEST_DELAY_MS    200U
 #define G3_PHY_TEST_POWER       0x10U
+#define G3_PHY_TEST_PAYLOAD_SIZE 120U
 #define G3_PHY_IND_HEADER_SIZE  227U
 
 static const uint8_t phy_pattern[] = "POWERMESH_PHY_01";
@@ -271,14 +272,25 @@ static void handle_frame(st8500_g3_t *g3)
         {
             uint16_t received_length = read_u16(&payload[225]);
 
-            if (received_length == sizeof(phy_pattern) - 1U &&
-                data_length == G3_PHY_IND_HEADER_SIZE + received_length &&
-                memcmp(
-                    &payload[G3_PHY_IND_HEADER_SIZE],
-                    phy_pattern,
-                    received_length) == 0)
+            if (received_length == G3_PHY_TEST_PAYLOAD_SIZE &&
+                data_length == G3_PHY_IND_HEADER_SIZE + received_length)
             {
-                g3->phy_rx_matches++;
+                bool matches = true;
+
+                for (uint16_t i = 0U; i < received_length; i++)
+                {
+                    if (payload[G3_PHY_IND_HEADER_SIZE + i] !=
+                        phy_pattern[i % (sizeof(phy_pattern) - 1U)])
+                    {
+                        matches = false;
+                        break;
+                    }
+                }
+
+                if (matches)
+                {
+                    g3->phy_rx_matches++;
+                }
             }
         }
     }
@@ -543,7 +555,7 @@ static bool send_frame(
     uint16_t payload_length
 )
 {
-    uint8_t frame[80] = {G3_SYNC, G3_SYNC};
+    uint8_t frame[192] = {G3_SYNC, G3_SYNC};
     uint16_t length = (uint16_t)(G3_FRAME_OVERHEAD + payload_length);
 
     if (length > sizeof(frame) ||
@@ -967,7 +979,7 @@ bool st8500_g3_phy_test_start(
     }
 
     // TESTTYPE, MODE, RXTXCONF, NBPACKETS, DELAY.
-    uint8_t payload[11U + 34U + sizeof(phy_pattern) - 1U] = {0};
+    uint8_t payload[11U + 34U + G3_PHY_TEST_PAYLOAD_SIZE] = {0};
 
     payload[0] = 1U;
     payload[1] = 0U;
@@ -993,8 +1005,14 @@ bool st8500_g3_phy_test_start(
         phy[30] = 0U;      // No ACK expected
         phy[31] = 0U;      // Two RS blocks
 
-        write_u16(&phy[32], sizeof(phy_pattern) - 1U);
-        memcpy(&phy[34], phy_pattern, sizeof(phy_pattern) - 1U);
+        write_u16(&phy[32], G3_PHY_TEST_PAYLOAD_SIZE);
+
+        for (uint16_t i = 0U; i < G3_PHY_TEST_PAYLOAD_SIZE; i++)
+        {
+            phy[34 + i] = phy_pattern[
+                i % (sizeof(phy_pattern) - 1U)
+            ];
+        }
 
         request_length = sizeof(payload);
     }
