@@ -125,6 +125,15 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
         return;
     }
 
+#if defined(POWERMESH_TRANSPORT_ST8500)
+    // Reject malformed IPv6 before it can block the G3 queue.
+    if (frame->type == UART_FRAME_TYPE_DATA &&
+        !st8500_g3_valid_ipv6(frame->payload, frame->length))
+    {
+        return;
+    }
+#endif
+
     packet_port_t source = *(packet_port_t *)context;
 
     (void)packet_router_receive(
@@ -136,7 +145,7 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
 
 #if defined(POWERMESH_TRANSPORT_ST8500)
 
-// Send the IPv6 payload through the G3 adaptation layer.
+// Keep each router packet until its ADPD transmission is confirmed.
 static bool send_g3_frame(
     void *context,
     uint8_t type,
@@ -146,24 +155,86 @@ static bool send_g3_frame(
 )
 {
     st8500_g3_t *modem = (st8500_g3_t *)context;
-    (void)sequence;
 
-    // PowerMesh ACKs are local to each transport.
+    static bool awaiting_confirm = false;
+    static bool retry_backoff = false;
+    static uint16_t pending_sequence;
+    static uint8_t pending_handle;
+    static uint32_t pending_request_count;
+    static uint32_t confirmed_before;
+    static uint32_t last_failure_ms;
+
+    // Router ACKs are link-local and must not enter G3.
     if (type == UART_FRAME_TYPE_ACK)
     {
         return true;
     }
 
-    if (type != UART_FRAME_TYPE_DATA)
+    if (modem == NULL || type != UART_FRAME_TYPE_DATA)
     {
         return false;
     }
 
-    return st8500_g3_send_ipv6(
-        modem,
-        payload,
-        length
-    );
+    uint32_t now = HAL_GetTick();
+
+    if (awaiting_confirm)
+    {
+        if (sequence != pending_sequence)
+        {
+            return false;
+        }
+
+        // Reject a stale confirmation after modem recovery.
+        if (modem->tx_requested != pending_request_count ||
+            modem->tx_handle != pending_handle)
+        {
+            awaiting_confirm = false;
+            retry_backoff = true;
+            last_failure_ms = now;
+            return false;
+        }
+
+        if (modem->tx_pending)
+        {
+            return false;
+        }
+
+        awaiting_confirm = false;
+
+        if (modem->tx_confirmed != confirmed_before)
+        {
+            retry_backoff = false;
+            return true;
+        }
+
+        // Retry the queued packet after a failure or timeout.
+        retry_backoff = true;
+        last_failure_ms = now;
+        return false;
+    }
+
+    if (retry_backoff)
+    {
+        if ((uint32_t)(now - last_failure_ms) < 1000U)
+        {
+            return false;
+        }
+
+        retry_backoff = false;
+    }
+
+    if (!st8500_g3_send_ipv6(modem, payload, length))
+    {
+        return false;
+    }
+
+    pending_sequence = sequence;
+    pending_handle = modem->tx_handle;
+    pending_request_count = modem->tx_requested;
+    confirmed_before = modem->tx_confirmed;
+    awaiting_confirm = true;
+
+    return false;
 }
 
 // Forward received G3 IPv6 packets into the existing router.

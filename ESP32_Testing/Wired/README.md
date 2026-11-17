@@ -1,5 +1,5 @@
 # ESP32 Testing (Wired)
-This is the active ESP32-S3 Matter light endpoint for the fully wired Pi -> STM32F4 -> STM32G4 -> ESP32 prototype. It receives IPv6 packets through a custom framed UART interface and returns IPv6 packets over UART.
+This is the active ESP32-S3 Matter light endpoint. The original Pi -> STM32F4 -> STM32G4 -> ESP32 wired prototype is being integrated with the STM32G4 -> ST8500 G3 PLC -> STM32G4 path. The ESP32 still receives and returns complete IPv6 packets through the same framed UART interface. The PLC path has not yet been validated end to end.
 
 Using ESP IDF 6.0.2 and ESP Matter 1.6.0 in a WSL environment. Please install the necessary dependencies and applications to build and flash the project.
 
@@ -16,7 +16,7 @@ In addition, use a nRF Connect to check if the BLE is being broadcasted while op
 The ESP32 does not change state when the color red is selected on Home Assistant. It is unknown how much colors are effected.
 
 ### Matter Command Processing
-Home Assistant/Matter Server sends IPv6 packets through the Pi TUN and UART bridge, then through the F4 and G4. The ESP32 deframes them and passes the IPv6 payload into lwIP/Matter. State updates and responses follow the wired UART path in the opposite direction. Matter discovery uses a temporary CHIP mDNS address-policy patch described below.
+Home Assistant/Matter Server sends IPv6 packets through the Pi TUN, gateway STM32G4, both ST8500 modems and endpoint STM32G4. The ESP32 deframes the UART data and passes the IPv6 payload into lwIP/Matter. State updates and responses follow the same path in reverse. The endpoint address is `fd00:706d::781d:ff:fe00:1`. Matter discovery retains the temporary CHIP mDNS address-policy patch described below.
 
 ## ESP32 Build + Flashing
 ### CMake Changes
@@ -35,8 +35,12 @@ echo "$SRC"
 ls -l "$SRC"
 ```
 
-Apply the patch:
-```
+If the prior patch is installed, first restore the saved original SDK source from `"$SRC.powermesh.bak"`. The patch script refuses to run on an already patched file. Then apply the updated policy for `fd00:706d::781d:ff:fe00:1`:
+```bash
+if [[ -f "$SRC.powermesh.bak" ]]; then
+  cp "$SRC.powermesh.bak" "$SRC"
+  rm "$SRC.powermesh.bak"
+fi
 python3 $HOME/PowerMesh/ESP32_Testing/Wired/apply_minimal_mdns_tunnel_patch_v2.py "$SRC"
 ```
 
@@ -93,7 +97,7 @@ sudo apt update && sudo apt install tcpdump -y
 ```
 
 ### Wiring
-On the front silkscreen, 17 is TX while 18 will be RX. Connect these pins to the corresponding pins of the STM32 (if testing full PLC) or Raspberry Pi (if testing wired Matter only). G is ground for the ESP32. Make sure to connect ground for the devices that are communicating to each other to a shared ground.
+On the ESP32-S3 front silkscreen, GPIO17 is TX and GPIO18 is RX. For the G3 PLC build, connect ESP32 TX GPIO17 to endpoint STM32G4 USART1 RX PA10 and ESP32 RX GPIO18 to STM32G4 USART1 TX PA9. Connect grounds together. The G4 USART3 PC10/PC11 interface connects to the endpoint ST8500, not directly to the ESP32.
 
 ### Pi TUN and bridge
 On the Pi, run `bash RaspberryPi/install.sh` once from the PowerMesh root. It installs the service that sets up `powermesh0` and runs the fully wired UART bridge at startup. Check the bridge with:
@@ -102,7 +106,7 @@ sudo systemctl status powermesh
 sudo journalctl -u powermesh -f
 ```
 
-For manual diagnostics and serial device selection, see [RaspberryPi/README.md](../../RaspberryPi/README.md). The older `tun_uart_bridge_hybrid.py` was for a Wi-Fi return-path experiment; it is not used by the working all-wired demo.
+For manual diagnostics and serial device selection, see [RaspberryPi/README.md](../../RaspberryPi/README.md). The older `tun_uart_bridge_hybrid.py` was for a Wi-Fi return-path experiment; it is not used by the G3 implementation.
 
 ### Open Home Assistant Dashboard
 Get the address of the RPI. This should be known because it is the same address that is used to SSH to the RPI. Enter this into a browser and replace ADDRESS with your RPI address, which could be IPv4 or IPv6.
@@ -112,7 +116,7 @@ http://ADDRESS:8123
 
 If the ESP32 has not been commissioned yet, then commission it.
 
-Afterwards, you can now change the state of the ESP32 using Home Assistant, and the transmission (RPI --> ESP32) and (ESP32 --> RPI) should be wired. To test, simply remove the wiring and the ESP32 should not change states.
+After the G3 join and IPv6 tests pass, run `RaspberryPi/test_tun_udp_echo.py` and try changing the light state through Home Assistant. The G3 PLC forwarding path must be verified on hardware before treating this as a working end-to-end demo.
 
 The Matter traffic can also be seen by entering this in another SSH terminal of the RPI:
 ```

@@ -3,7 +3,7 @@
 
 Use only with the PowerMesh test firmware. The patch skips the custom uaN
 interface for mDNS listener sockets (so mDNS is transmitted on the physical
-LAN interface), but returns fd00:706d::2 as the Matter hostname's IPv6 address.
+LAN interface), but returns fd00:706d::781d:ff:fe00:1 as the Matter hostname's IPv6 address.
 IPv4 address records are suppressed for this test endpoint.
 
 A backup is created as <source>.powermesh.bak. This script refuses to overwrite
@@ -72,7 +72,7 @@ public:
             return false;
         }
 
-        if (!chip::Inet::IPAddress::FromString("fd00:706d::2", dest))
+        if (!chip::Inet::IPAddress::FromString("fd00:706d::781d:ff:fe00:1", dest))
         {
             ChipLogError(Discovery, "Failed to parse PowerMesh tunnel IPv6 address");
             return false;
@@ -149,7 +149,7 @@ def main() -> int:
     path.write_text(text, encoding="utf-8")
     print(f"Patched source: {path}")
     print(f"Original backup: {backup}")
-    print("Policy applied: uaN excluded as mDNS listener; AAAA response address set to fd00:706d::2; A records suppressed.")
+    print("Policy applied: uaN excluded as mDNS listener; AAAA response address set to fd00:706d::781d:ff:fe00:1; A records suppressed.")
     print("This patch is for the PowerMesh test firmware only.")
     return 0
 

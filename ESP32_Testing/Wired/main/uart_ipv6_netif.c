@@ -209,8 +209,12 @@ static void uart_netif_add_on_tcpip_thread(void *arg)
         return;
     }
 
-    if (!set_static_ipv6_address(&s_uart_netif, 0, "fe80::2") ||
-        !set_static_ipv6_address(&s_uart_netif, 1, "fd00:706d::2")) {
+    if (!set_static_ipv6_address(
+            &s_uart_netif, 0,
+            "fe80::781d:ff:fe00:1") ||
+        !set_static_ipv6_address(
+            &s_uart_netif, 1,
+            "fd00:706d::781d:ff:fe00:1")) {
         netif_remove(&s_uart_netif);
         netif_set_default(previous_default);
         s_init_result = ESP_FAIL;
@@ -228,7 +232,9 @@ static void uart_netif_add_on_tcpip_thread(void *arg)
     s_init_result = ESP_OK;
 
     ESP_LOGI(TAG,
-             "Wired IPv6 ready: ua%u, fe80::2, fd00:706d::2, MTU=%u",
+             "Wired IPv6 ready: ua%u, "
+             "fe80::781d:ff:fe00:1, "
+             "fd00:706d::781d:ff:fe00:1, MTU=%u",
              (unsigned)s_uart_netif.num,
              (unsigned)UART_IPV6_MAX_PACKET);
 #endif

@@ -312,17 +312,19 @@ static void log_chip_inet_interfaces(void)
         address_count++;
 
         if (interface_name[0] == 'u' && interface_name[1] == 'a') {
-            if (strcmp(address_text, "fe80::2") == 0) {
+            if (strcmp(address_text, "fe80::781d:ff:fe00:1") == 0) {
                 found_uart_link_local = true;
             }
-            if (strcmp(address_text, "fd00:706d::2") == 0) {
+            if (strcmp(address_text, "fd00:706d::781d:ff:fe00:1") == 0) {
                 found_uart_ula = true;
             }
         }
     }
 
     ESP_LOGI(TAG,
-             "CHIP Inet diagnostic result: uaN=%s fe80::2=%s fd00:706d::2=%s",
+             "CHIP Inet diagnostic result: uaN=%s "
+             "fe80::781d:ff:fe00:1=%s "
+             "fd00:706d::781d:ff:fe00:1=%s",
              found_uart_interface ? "FOUND" : "MISSING",
              found_uart_link_local ? "FOUND" : "MISSING",
              found_uart_ula ? "FOUND" : "MISSING");

@@ -6,8 +6,8 @@ import ipaddress
 import socket
 import sys
 
-SOURCE_IPV6 = "fd00:706d::1"
-DESTINATION_IPV6 = "fd00:706d::2"
+SOURCE_IPV6 = "fd00:706d::781d:ff:fe00:0"
+DESTINATION_IPV6 = "fd00:706d::781d:ff:fe00:1"
 DESTINATION_PORT = 4242
 PAYLOAD = b"HELLO THROUGH TUN"
 

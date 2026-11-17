@@ -1,6 +1,6 @@
 # PowerMesh Raspberry Pi gateway
 
-The Pi runs Home Assistant/Matter Server, provides the IPv6 `powermesh0` TUN interface, and exchanges framed IPv6 packets with the STM32F4 over UART. The UART transport uses sync bytes, sequence numbers, CRC32, DATA frames, and link-local ACKs.
+The Pi runs Home Assistant/Matter Server, provides the IPv6 `powermesh0` TUN interface, and exchanges framed IPv6 packets with the gateway STM32G4 over UART. The UART transport uses sync bytes, sequence numbers, CRC32, DATA frames, and link-local ACKs.
 
 ## Initial installation
 
@@ -21,7 +21,7 @@ sudo systemctl status powermesh
 sudo journalctl -u powermesh -f
 ```
 
-If you have multiple USB serial devices, configure `POWERMESH_SERIAL` in `/etc/default/powermesh` to select the F4 ST-LINK virtual COM device. Otherwise `start_bridge.sh` attempts to find it automatically. To inspect serial devices:
+If you have multiple USB serial devices, configure `POWERMESH_SERIAL` in `/etc/default/powermesh` to select the gateway G4 ST-LINK virtual COM device. Otherwise `start_bridge.sh` attempts to find it automatically. To inspect serial devices:
 
 ```bash
 ls -l /dev/serial/by-id/
@@ -32,15 +32,15 @@ ls /dev/ttyACM*
 
 ```bash
 ip -6 addr show dev powermesh0
-ip -6 route get fd00:706d::2
+ip -6 route get fd00:706d::781d:ff:fe00:1
 ```
 
-The Pi has `fd00:706d::1/64` on `powermesh0` with MTU 1280. The ESP32 endpoint uses `fd00:706d::2`.
+The Pi has `fd00:706d::781d:ff:fe00:0/64` on `powermesh0` with MTU 1280. The ESP32 endpoint uses `fd00:706d::781d:ff:fe00:1`.
 
-With the complete F4, G4, and ESP32 setup powered, test:
+With both G4s, both ST8500s, and the ESP32 powered and the G3 network joined, test:
 
 ```bash
-ping -6 fd00:706d::2
+ping -6 fd00:706d::781d:ff:fe00:1
 sudo tcpdump -ni powermesh0 'ip6 and udp port 5540'
 ```
 
@@ -62,14 +62,22 @@ Use the correct serial path for your board. After manual debugging, restart the 
 
 ```text
 Home Assistant / Matter Server
-       ↕
-IPv6 TUN / Raspberry Pi UART bridge
-       ↕
-STM32F446RE gateway
-       ↕
-STM32G474RE bridge
-       ↕
-ESP32-S3 Matter light
+          ↕
+Raspberry Pi TUN powermesh0
+          ↕
+Pi UART bridge
+          ↕
+Gateway STM32G4
+          ↕
+Gateway ST8500
+          ↕
+G3 PLC communication
+          ↕
+Endpoint ST8500
+          ↕
+Endpoint STM32G4
+          ↕
+ESP32-S3 IPv6 / Matter
 ```
 
-The current prototype is wired UART throughout; PLC/ST8500 integration is still pending. Earlier `tun_uart_bridge_hybrid.py` and wireless-return tests are retained only as historical experiments.
+The STM32F4 is no longer required in the G3 design. The original all-UART prototype remains a useful reference, but G3 operation and Matter delivery still require hardware validation. Earlier `tun_uart_bridge_hybrid.py` and wireless-return tests are retained only as historical experiments.

@@ -2,8 +2,8 @@
 set -euo pipefail
 
 TUN_NAME="powermesh0"
-TUN_ADDRESS="fd00:706d::1/64"
-REMOTE_TEST_ADDRESS="fd00:706d::2"
+TUN_ADDRESS="fd00:706d::781d:ff:fe00:0/64"
+REMOTE_TEST_ADDRESS="fd00:706d::781d:ff:fe00:1"
 MTU=1280
 
 if (( EUID != 0 )); then
@@ -18,6 +18,8 @@ if ! ip link show dev "$TUN_NAME" >/dev/null 2>&1; then
 fi
 
 ip link set dev "$TUN_NAME" mtu "$MTU"
+# Remove the old prototype address when upgrading.
+ip -6 addr del "fd00:706d::1/64" dev "$TUN_NAME" 2>/dev/null || true
 ip -6 addr replace "$TUN_ADDRESS" dev "$TUN_NAME"
 ip link set dev "$TUN_NAME" up
 
