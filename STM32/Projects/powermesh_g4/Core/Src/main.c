@@ -28,7 +28,6 @@
 #include <stdio.h>
 
 // Temporary PHY-only bench test, disabled for G3 network joining.
-// #define POWERMESH_PHY_DIRECT_TEST
 #define POWERMESH_PHY_TEST_FRAME_COUNT 100U
 #define POWERMESH_PHY_TEST_GAP_MS 200U
 #if defined(POWERMESH_TRANSPORT_ST8500)
@@ -617,6 +616,7 @@ int main(void)
       }
   }
 
+#if !defined(POWERMESH_JOIN_ONLY)
   uart_transport_t *local_transport;
   UART_HandleTypeDef *local_uart;
   packet_port_t *local_port;
@@ -671,6 +671,7 @@ int main(void)
       on_g3_ipv6,
       NULL
   );
+#endif // !POWERMESH_JOIN_ONLY
 #endif
 #endif
 
@@ -701,6 +702,7 @@ int main(void)
         recovery_attempts++;
         last_recovery_ms = recovery_tick;
 
+#if defined(POWERMESH_ROLE_ENDPOINT) || defined(POWERMESH_JOIN_MONITOR)
         char message[120];
         int length = snprintf(
             message,
@@ -717,8 +719,11 @@ int main(void)
                 &hlpuart1, (uint8_t *)message, (uint16_t)length, 100U
             );
         }
+#endif
 
         bool recovered = st8500_g3_recover(&g3);
+
+#if defined(POWERMESH_ROLE_ENDPOINT) || defined(POWERMESH_JOIN_MONITOR)
         const char *result = recovered ?
             "[G3] Recovery successful\r\n" :
             "[G3] Recovery failed\r\n";
@@ -726,6 +731,9 @@ int main(void)
         (void)HAL_UART_Transmit(
             &hlpuart1, (uint8_t *)result, (uint16_t)strlen(result), 100U
         );
+#else
+        (void)recovered;
+#endif
     }
 
     if (!g3.recovery_needed)
@@ -879,8 +887,10 @@ int main(void)
 #endif
 
 #else
+#if !defined(POWERMESH_JOIN_ONLY)
     uart_transport_poll(local_transport);
     packet_router_poll(&router);
+#endif
 
 #if defined(POWERMESH_JOIN_MONITOR)
     static uint32_t last_report_ms = 0U;

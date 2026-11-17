@@ -3,8 +3,12 @@
 
 #include "main.h"
 
-// Temporary join logging uses LPUART1. Disable before Pi packet forwarding.
+// Join and PHY diagnostics use LPUART1, also used for Pi data in PLC mode.
+#if defined(POWERMESH_JOIN_ONLY) || \
+    defined(POWERMESH_PHY_TEST_TX) || \
+    defined(POWERMESH_PHY_TEST_RX)
 #define POWERMESH_JOIN_MONITOR
+#endif
 
 #if defined(POWERMESH_ROLE_GATEWAY) == defined(POWERMESH_ROLE_ENDPOINT)
 #error "Select exactly one PowerMesh G4 role"

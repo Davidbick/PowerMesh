@@ -62,6 +62,20 @@
             "cacheVariables": {
                 "POWERMESH_PHY_TEST": "RX"
             }
+        },
+        {
+            "name": "GatewayJoin",
+            "inherits": "GatewayPLC",
+            "cacheVariables": {
+                "POWERMESH_JOIN_ONLY": "ON"
+            }
+        },
+        {
+            "name": "EndpointJoin",
+            "inherits": "EndpointPLC",
+            "cacheVariables": {
+                "POWERMESH_JOIN_ONLY": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -92,6 +106,14 @@
         {
             "name": "PHYRx",
             "configurePreset": "PHYRx"
+        },
+        {
+            "name": "GatewayJoin",
+            "configurePreset": "GatewayJoin"
+        },
+        {
+            "name": "EndpointJoin",
+            "configurePreset": "EndpointJoin"
         }
     ]
 }

@@ -19,7 +19,7 @@
     {
       "name": "Debug G4 Gateway PLC",
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build/GatewayPLC/powermesh_g4.elf",
+      "executable": "${workspaceFolder}/build/GatewayPLC/GatewayPLC.elf",
       "request": "launch",
       "type": "cortex-debug",
       "servertype": "openocd",
@@ -49,7 +49,7 @@
     {
       "name": "Debug G4 Endpoint PLC",
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build/EndpointPLC/powermesh_g4.elf",
+      "executable": "${workspaceFolder}/build/EndpointPLC/EndpointPLC.elf",
       "request": "launch",
       "type": "cortex-debug",
       "servertype": "openocd",
@@ -64,7 +64,7 @@
     {
       "name": "Debug G4 PHY TX",
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build/PHYTx/powermesh_g4.elf",
+      "executable": "${workspaceFolder}/build/PHYTx/PHYTx.elf",
       "request": "launch",
       "type": "cortex-debug",
       "servertype": "openocd",
@@ -79,7 +79,37 @@
     {
       "name": "Debug G4 PHY RX",
       "cwd": "${workspaceFolder}",
-      "executable": "${workspaceFolder}/build/PHYRx/powermesh_g4.elf",
+      "executable": "${workspaceFolder}/build/PHYRx/PHYRx.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "device": "STM32G474RE",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32g4x.cfg"
+      ],
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "raw"
+    },
+    {
+      "name": "Debug G4 Gateway Join",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/GatewayJoin/GatewayJoin.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "device": "STM32G474RE",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32g4x.cfg"
+      ],
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "raw"
+    },
+    {
+      "name": "Debug G4 Endpoint Join",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/EndpointJoin/EndpointJoin.elf",
       "request": "launch",
       "type": "cortex-debug",
       "servertype": "openocd",

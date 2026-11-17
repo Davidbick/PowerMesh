@@ -37,11 +37,14 @@
 #define G3_BOOT_SRV_START_CONF   0xB1U
 #define G3_BOOT_SRV_STOP_REQ     0xB2U
 #define G3_BOOT_SRV_STOP_CONF    0xB3U
+#define G3_BOOT_SRV_LEAVE_IND    0xB4U
 #define G3_BOOT_SRV_JOIN_IND     0xB7U
 #define G3_BOOT_DEV_START_REQ    0xB8U
 #define G3_BOOT_DEV_START_CONF   0xB9U
 #define G3_BOOT_DEV_LEAVE_IND    0xBCU
 #define G3_BOOT_DEV_PANSORT_IND  0xC1U
+#define G3_BOOT_DEV_PANSORT_REQ  0xC2U
+#define G3_BOOT_DEV_PANSORT_CONF 0xC3U
 #define G3_BOOT_SRV_GETPSK_IND   0xC4U
 #define G3_BOOT_SRV_SETPSK_REQ   0xC5U
 #define G3_BOOT_SRV_SETPSK_CONF  0xC6U
@@ -56,6 +59,10 @@
 #define G3_ROLE_COORDINATOR     0x01U
 #define G3_PAN_ID               0x781DU
 #define G3_DEVICE_SHORT_ADDR    0x0001U
+#define G3_PAN_DESCRIPTOR_SIZE   8U
+#define G3_MAX_PAN_DESCRIPTORS   64U
+#define G3_MEDIA_PLC             0x00U
+#define G3_MAX_PSK_ID_LENGTH     36U
 #define G3_PIB_PAN_ID           0x00000050UL
 #define G3_PIB_SHORT_ADDR       0x00000053UL
 #define G3_PIB_KEY_TABLE        0x00000071UL
@@ -138,9 +145,11 @@ static void log_boot_event(
     {
         case G3_BOOT_SRV_START_CONF: event = "ServerStart"; break;
         case G3_BOOT_SRV_JOIN_IND: event = "ServerJoin"; break;
+        case G3_BOOT_SRV_LEAVE_IND: event = "ServerLeave"; break;
         case G3_BOOT_DEV_START_CONF: event = "DeviceStart"; break;
         case G3_BOOT_DEV_LEAVE_IND: event = "DeviceLeave"; break;
         case G3_BOOT_DEV_PANSORT_IND: event = "PANSort"; break;
+        case G3_BOOT_DEV_PANSORT_CONF: event = "PANSortConfirm"; break;
         case G3_BOOT_SRV_GETPSK_IND: event = "GetPSK"; break;
         case G3_BOOT_SRV_SETPSK_CONF: event = "SetPSK"; break;
         default: return;
@@ -312,6 +321,83 @@ static bool send_frame(
     uint16_t payload_length
 );
 
+// The 6.x ST firmware uses eight-byte PAN descriptors.
+// Select the intended PLC PAN, then return its best agent.
+static void respond_to_pan_sort(
+    st8500_g3_t *g3,
+    const uint8_t *data,
+    uint16_t length
+)
+{
+    if (length < 1U)
+    {
+        g3_log("PANSort indication missing count");
+        return;
+    }
+
+    uint8_t count = data[0];
+
+    if (count == 0U)
+    {
+        g3_log("PANSort found no networks");
+        return;
+    }
+
+    if (count > G3_MAX_PAN_DESCRIPTORS ||
+        length != (uint16_t)(1U + count * G3_PAN_DESCRIPTOR_SIZE))
+    {
+        g3_log("Invalid PANSort descriptor list");
+        return;
+    }
+
+    const uint8_t *best = NULL;
+
+    for (uint8_t i = 0U; i < count; i++)
+    {
+        const uint8_t *descriptor =
+            &data[1U + i * G3_PAN_DESCRIPTOR_SIZE];
+
+        uint16_t pan_id = read_u16(&descriptor[0]);
+        uint16_t route_cost = read_u16(&descriptor[5]);
+
+        if (pan_id != G3_PAN_ID ||
+            descriptor[7] != G3_MEDIA_PLC)
+        {
+            continue;
+        }
+
+        if (best == NULL ||
+            route_cost < read_u16(&best[5]) ||
+            (route_cost == read_u16(&best[5]) &&
+             descriptor[2] > best[2]))
+        {
+            best = descriptor;
+        }
+    }
+
+    if (best == NULL)
+    {
+        g3_log("PANSort: target PLC PAN not found");
+        return;
+    }
+
+    uint8_t response[1U + G3_PAN_DESCRIPTOR_SIZE] = {1U};
+    memcpy(&response[1], best, G3_PAN_DESCRIPTOR_SIZE);
+
+    if (!send_frame(
+            g3,
+            G3_BOOT_DEV_PANSORT_REQ,
+            response,
+            sizeof(response)))
+    {
+        g3_log("PANSort request TX failed");
+        return;
+    }
+
+    g3_log_number("PANSort selected LBA", read_u16(&best[3]));
+    g3_log("PANSort request sent");
+}
+
 static bool request_device_join(st8500_g3_t *g3)
 {
     uint8_t start_type = 0U;  // Normal network join.
@@ -430,85 +516,190 @@ static void handle_frame(st8500_g3_t *g3)
         }
     }
 
-    if (command == G3_BOOT_SRV_START_CONF && g3->coordinator &&
-        error == 0U && data_length >= 1U)
+    if (command == G3_BOOT_SRV_START_CONF && g3->coordinator)
     {
-        if (payload[0] == 0U)
+        if (error != 0U)
+        {
+            g3->state = ST8500_G3_FAILED;
+            g3_log_number("Server start host error", error);
+        }
+        else if (data_length < 1U)
+        {
+            g3->state = ST8500_G3_FAILED;
+            g3_log("Server start confirmation missing status");
+        }
+        else if (payload[0] != 0U)
+        {
+            g3->state = ST8500_G3_FAILED;
+            g3_log_number("Coordinator start status", payload[0]);
+        }
+        else
         {
             g3->pan_id = G3_PAN_ID;
             g3->short_addr = 0U;
             g3->state = ST8500_G3_NETWORK_READY;
             g3_log("Coordinator network started");
         }
-        else
-        {
-            g3->state = ST8500_G3_FAILED;
-            g3_log_number("Coordinator start status", payload[0]);
-        }
     }
-    else if (command == G3_BOOT_DEV_START_CONF && !g3->coordinator &&
-             error == 0U && data_length >= 5U)
+    else if (command == G3_BOOT_DEV_START_CONF && !g3->coordinator)
     {
-        if (payload[0] == 0U)
+        if (error != 0U)
         {
-            g3->short_addr = read_u16(&payload[1]);
-            g3->pan_id = read_u16(&payload[3]);
-            g3->state = ST8500_G3_NETWORK_READY;
-
-            g3_log("Device joined G3 network");
-            g3_log_number("PAN ID", g3->pan_id);
-            g3_log_number("Short address", g3->short_addr);
+            g3_log_number("Device join host error", error);
         }
-        else
+        else if (data_length != 5U)
+        {
+            g3_log_number("Invalid join confirmation length", data_length);
+        }
+        else if (payload[0] != 0U)
         {
             g3_log_number("Device join status", payload[0]);
+        }
+        else
+        {
+            uint16_t address = read_u16(&payload[1]);
+            uint16_t pan_id = read_u16(&payload[3]);
+
+            if (pan_id != G3_PAN_ID ||
+                address == 0xFFFFU ||
+                address == 0x0000U)
+            {
+                g3->state = ST8500_G3_FAILED;
+                g3_log("Joined unexpected PAN or address");
+            }
+            else
+            {
+                g3->short_addr = address;
+                g3->pan_id = pan_id;
+                g3->join_active = false;
+                g3->state = ST8500_G3_NETWORK_READY;
+
+                g3_log("Device joined G3 network");
+                g3_log_number("PAN ID", pan_id);
+                g3_log_number("Short address", address);
+            }
+        }
+    }
+    else if (command == G3_BOOT_DEV_PANSORT_IND && !g3->coordinator)
+    {
+        if (error != 0U)
+        {
+            g3_log_number("PANSort host error", error);
+        }
+        else
+        {
+            respond_to_pan_sort(g3, payload, data_length);
+        }
+    }
+    else if (command == G3_BOOT_DEV_PANSORT_CONF && !g3->coordinator)
+    {
+        if (error != 0U)
+        {
+            g3_log_number("PANSort confirmation host error", error);
+        }
+        else if (data_length < 1U)
+        {
+            g3_log("PANSort confirmation missing status");
+        }
+        else if (payload[0] != 0U)
+        {
+            g3_log_number("PANSort rejected", payload[0]);
+        }
+        else
+        {
+            g3_log("PANSort accepted");
         }
     }
     else if (command == G3_BOOT_SRV_JOIN_IND && g3->coordinator &&
              error == 0U && data_length >= 10U)
     {
-        g3->last_joined_addr = read_u16(&payload[8]);
-        g3->joined_devices++;
+        uint16_t address = read_u16(&payload[8]);
 
-        g3_log_number(
-            "Device joined, short address",
-            g3->last_joined_addr
-        );
-    }
-    else if (command == G3_BOOT_SRV_GETPSK_IND && g3->coordinator &&
-             error == 0U && data_length >= 9U)
-    {
-        uint8_t response[26];
-
-        memcpy(response, payload, 8U);
-        memcpy(&response[8], g3_psk, sizeof(g3_psk));
-        write_u16(&response[24], G3_DEVICE_SHORT_ADDR);
-
-        if (send_frame(
-                g3,
-                G3_BOOT_SRV_SETPSK_REQ,
-                response,
-                sizeof(response)))
+        if (g3->joined_devices == 0U ||
+            g3->last_joined_addr != address)
         {
-            g3_log("Responded to device PSK request");
+            g3->joined_devices++;
+            g3->last_joined_addr = address;
+        }
+
+        g3_log_number("Device joined, short address", address);
+    }
+    else if (command == G3_BOOT_SRV_LEAVE_IND && g3->coordinator &&
+             error == 0U && data_length >= 8U)
+    {
+        if (g3->joined_devices > 0U)
+        {
+            g3->joined_devices--;
+        }
+
+        if (g3->joined_devices == 0U)
+        {
+            g3->last_joined_addr = 0xFFFFU;
+        }
+
+        g3_log("Device left G3 network");
+    }
+    else if (command == G3_BOOT_SRV_GETPSK_IND && g3->coordinator)
+    {
+        if (error != 0U)
+        {
+            g3_log_number("GetPSK host error", error);
+        }
+        else if (data_length < 9U ||
+                 payload[8] > G3_MAX_PSK_ID_LENGTH ||
+                 data_length < (uint16_t)(9U + payload[8]))
+        {
+            // A zero-length IdP is valid for ST's default identity.
+            g3_log("Invalid GetPSK indication");
         }
         else
         {
-            g3_log("Failed to send device PSK");
+            uint8_t response[26];
+            memcpy(response, payload, 8U);
+            memcpy(&response[8], g3_psk, sizeof(g3_psk));
+            write_u16(&response[24], G3_DEVICE_SHORT_ADDR);
+
+            if (send_frame(
+                    g3,
+                    G3_BOOT_SRV_SETPSK_REQ,
+                    response,
+                    sizeof(response)))
+            {
+                g3_log("Responded to device PSK request");
+            }
+            else
+            {
+                g3_log("Failed to send device PSK");
+            }
         }
     }
-    else if (command == G3_BOOT_SRV_SETPSK_CONF && g3->coordinator &&
-             error == 0U && data_length >= 1U && payload[0] != 0U)
+    else if (command == G3_BOOT_SRV_SETPSK_CONF && g3->coordinator)
     {
-        g3_log_number("PSK confirmation error", payload[0]);
+        if (error != 0U)
+        {
+            g3_log_number("SetPSK host error", error);
+        }
+        else if (data_length < 1U)
+        {
+            g3_log("SetPSK confirmation missing status");
+        }
+        else if (payload[0] != 0U)
+        {
+            g3_log_number("PSK confirmation error", payload[0]);
+        }
+        else
+        {
+            g3_log("PSK accepted");
+        }
     }
     else if (command == G3_BOOT_DEV_LEAVE_IND && !g3->coordinator)
     {
         g3->state = ST8500_G3_WAITING_FOR_NETWORK;
         g3->pan_id = 0xFFFFU;
         g3->short_addr = 0xFFFFU;
+        g3->join_active = true;
         g3->join_attempts = 0U;
-        g3->last_join_attempt_ms = HAL_GetTick();
+        g3->last_join_attempt_ms = HAL_GetTick() - G3_JOIN_RETRY_MS;
         g3_log("Device left G3 network");
     }
     else if (command == G3_ADP_DATA_CONF && g3->tx_pending)

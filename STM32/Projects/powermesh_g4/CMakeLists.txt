@@ -55,6 +55,18 @@ if(NOT POWERMESH_PHY_TEST STREQUAL "OFF" AND
     message(FATAL_ERROR "PHY test requires ST8500 transport")
 endif()
 
+option(POWERMESH_JOIN_ONLY "Run G3 joining without IPv6 forwarding" OFF)
+
+if(POWERMESH_JOIN_ONLY)
+    if(NOT POWERMESH_TRANSPORT STREQUAL "ST8500")
+        message(FATAL_ERROR "Join test requires ST8500 transport")
+    endif()
+
+    if(NOT POWERMESH_PHY_TEST STREQUAL "OFF")
+        message(FATAL_ERROR "Join and PHY test modes are exclusive")
+    endif()
+endif()
+
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
@@ -97,6 +109,41 @@ if(POWERMESH_PHY_TEST STREQUAL "TX")
 elseif(POWERMESH_PHY_TEST STREQUAL "RX")
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
         POWERMESH_PHY_TEST_RX)
+endif()
+
+if(POWERMESH_JOIN_ONLY)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        POWERMESH_JOIN_ONLY
+    )
+endif()
+
+if(POWERMESH_PHY_TEST STREQUAL "TX" OR
+   POWERMESH_PHY_TEST STREQUAL "RX")
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        POWERMESH_PHY_DIRECT_TEST
+    )
+endif()
+
+if(POWERMESH_TRANSPORT STREQUAL "ST8500")
+    if(POWERMESH_PHY_TEST STREQUAL "TX")
+        set(POWERMESH_IMAGE_NAME "PHYTx")
+    elseif(POWERMESH_PHY_TEST STREQUAL "RX")
+        set(POWERMESH_IMAGE_NAME "PHYRx")
+    elseif(POWERMESH_JOIN_ONLY)
+        if(POWERMESH_ROLE STREQUAL "GATEWAY")
+            set(POWERMESH_IMAGE_NAME "GatewayJoin")
+        else()
+            set(POWERMESH_IMAGE_NAME "EndpointJoin")
+        endif()
+    elseif(POWERMESH_ROLE STREQUAL "GATEWAY")
+        set(POWERMESH_IMAGE_NAME "GatewayPLC")
+    else()
+        set(POWERMESH_IMAGE_NAME "EndpointPLC")
+    endif()
+
+    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
+        OUTPUT_NAME "${POWERMESH_IMAGE_NAME}"
+    )
 endif()
 
 # Remove wrong libob.a library dependency when using cpp files
