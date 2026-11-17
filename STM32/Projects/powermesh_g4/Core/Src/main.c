@@ -33,6 +33,9 @@
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
 #include "st8500_g3.h"
+#if defined(POWERMESH_IPV6_TEST)
+#include "st8500_ipv6_diag.h"
+#endif
 #endif
 /* USER CODE END Includes */
 
@@ -342,6 +345,156 @@ static void print_phy_status(void)
 
 #endif
 
+
+#if defined(POWERMESH_TRANSPORT_ST8500) && \
+    defined(POWERMESH_IPV6_TEST)
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+static bool ipv6_complete = false;
+static uint8_t ipv6_attempts = 0U;
+static uint16_t ipv6_peer_addr = 0xFFFFU;
+static uint32_t ipv6_last_send_ms = 0U;
+#else
+static bool ipv6_reply_ready = false;
+static uint8_t ipv6_reply[ST8500_IPV6_DIAG_SIZE];
+#endif
+
+static void ipv6_diag_log(const char *message)
+{
+    char line[192];
+    int length = snprintf(
+        line, sizeof(line), "[IPv6] %s\r\n", message
+    );
+
+    if (length > 0 && (size_t)length < sizeof(line) &&
+        hlpuart1.gState == HAL_UART_STATE_READY)
+    {
+        (void)HAL_UART_Transmit(
+            &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U
+        );
+    }
+}
+
+// The ADPD callback runs in the main-loop context.
+static void on_ipv6_diag_packet(
+    const uint8_t *packet,
+    uint16_t length,
+    void *context
+)
+{
+    (void)context;
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+
+    if (ipv6_attempts > 0U &&
+        st8500_ipv6_diag_matches(
+            packet, length, g3.pan_id, ipv6_peer_addr, 0U, true))
+    {
+        ipv6_complete = true;
+        ipv6_diag_log("Echo Reply MATCH | Bidirectional IPv6 PASS");
+    }
+    else
+    {
+        ipv6_diag_log("Unexpected IPv6 response");
+    }
+
+#else
+
+    if (!st8500_ipv6_diag_matches(
+            packet, length, g3.pan_id, 0U, g3.short_addr, false))
+    {
+        ipv6_diag_log("Echo Request MISMATCH");
+        return;
+    }
+
+    ipv6_diag_log("Echo Request MATCH | 64 bytes verified");
+
+    ipv6_reply_ready = st8500_ipv6_diag_build(
+        ipv6_reply,
+        sizeof(ipv6_reply),
+        g3.pan_id,
+        g3.short_addr,
+        0U,
+        true
+    );
+
+#endif
+}
+
+static void ipv6_diag_poll(void)
+{
+    uint32_t now = HAL_GetTick();
+
+    if (g3.state == ST8500_G3_NETWORK_READY)
+    {
+#if defined(POWERMESH_ROLE_GATEWAY)
+
+        if (!ipv6_complete &&
+            !g3.tx_pending &&
+            g3.joined_devices > 0U &&
+            g3.last_joined_addr != 0xFFFFU &&
+            ipv6_attempts < 3U &&
+            (ipv6_attempts == 0U ||
+             (uint32_t)(now - ipv6_last_send_ms) >= 15000U))
+        {
+            uint8_t request[ST8500_IPV6_DIAG_SIZE];
+
+            if (st8500_ipv6_diag_build(
+                    request, sizeof(request), g3.pan_id,
+                    0U, g3.last_joined_addr, false) &&
+                st8500_g3_send_ipv6(
+                    &g3, request, sizeof(request)))
+            {
+                ipv6_peer_addr = g3.last_joined_addr;
+                ipv6_last_send_ms = now;
+                ipv6_attempts++;
+                ipv6_diag_log("Echo Request sent through ADPD");
+            }
+        }
+
+#else
+
+        if (ipv6_reply_ready && !g3.tx_pending)
+        {
+            if (st8500_g3_send_ipv6(
+                    &g3, ipv6_reply, sizeof(ipv6_reply)))
+            {
+                ipv6_reply_ready = false;
+                ipv6_diag_log("Echo Reply sent through ADPD");
+            }
+        }
+
+#endif
+    }
+
+    static uint32_t last_report_ms = 0U;
+
+    if ((uint32_t)(now - last_report_ms) >= 5000U)
+    {
+        last_report_ms = now;
+
+        char line[160];
+        int length = snprintf(
+            line, sizeof(line),
+            "State=%u | TX=%lu | Confirmed=%lu | "
+            "Failed=%lu | RX=%lu | Invalid=%lu",
+            (unsigned)g3.state,
+            (unsigned long)g3.tx_requested,
+            (unsigned long)g3.tx_confirmed,
+            (unsigned long)g3.tx_failed,
+            (unsigned long)g3.rx_packets,
+            (unsigned long)g3.rx_invalid
+        );
+
+        if (length > 0 && (size_t)length < sizeof(line))
+        {
+            ipv6_diag_log(line);
+        }
+    }
+}
+
+#endif
+
 /* USER CODE END 0 */
 
 /**
@@ -616,7 +769,8 @@ int main(void)
       }
   }
 
-#if !defined(POWERMESH_JOIN_ONLY)
+#if !defined(POWERMESH_JOIN_ONLY) && \
+    !defined(POWERMESH_IPV6_TEST)
   uart_transport_t *local_transport;
   UART_HandleTypeDef *local_uart;
   packet_port_t *local_port;
@@ -672,6 +826,10 @@ int main(void)
       NULL
   );
 #endif // !POWERMESH_JOIN_ONLY
+
+#if defined(POWERMESH_IPV6_TEST)
+  st8500_g3_set_receive_callback(&g3, on_ipv6_diag_packet, NULL);
+#endif
 #endif
 #endif
 
@@ -887,9 +1045,14 @@ int main(void)
 #endif
 
 #else
-#if !defined(POWERMESH_JOIN_ONLY)
+#if !defined(POWERMESH_JOIN_ONLY) && \
+    !defined(POWERMESH_IPV6_TEST)
     uart_transport_poll(local_transport);
     packet_router_poll(&router);
+#endif
+
+#if defined(POWERMESH_IPV6_TEST)
+    ipv6_diag_poll();
 #endif
 
 #if defined(POWERMESH_JOIN_MONITOR)

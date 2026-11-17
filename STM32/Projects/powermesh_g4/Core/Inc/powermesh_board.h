@@ -5,6 +5,7 @@
 
 // Join and PHY diagnostics use LPUART1, also used for Pi data in PLC mode.
 #if defined(POWERMESH_JOIN_ONLY) || \
+    defined(POWERMESH_IPV6_TEST) || \
     defined(POWERMESH_PHY_TEST_TX) || \
     defined(POWERMESH_PHY_TEST_RX)
 #define POWERMESH_JOIN_MONITOR

@@ -5,11 +5,10 @@
 #include <stdint.h>
 
 #include "stm32g4xx_hal.h"
+#include "st8500_g3_codec.h"
 
 #define ST8500_G3_RX_DMA_SIZE 2048U
 #define ST8500_G3_FRAME_SIZE 1664U
-#define ST8500_G3_MAX_IPV6_SIZE 1280U
-#define ST8500_G3_TX_FRAME_SIZE (ST8500_G3_MAX_IPV6_SIZE + 17U)
 
 typedef void (*st8500_g3_ipv6_callback_t)(
     const uint8_t *packet,
@@ -102,12 +101,14 @@ typedef struct
     uint8_t tx_handle;
     uint8_t next_handle;
     uint8_t last_tx_status;
+    uint8_t last_tx_media;
     bool tx_pending;
     uint32_t tx_started_ms;
 
     uint32_t tx_requested;
     uint32_t tx_confirmed;
     uint32_t tx_failed;
+    uint32_t tx_bad_confirms;
     uint32_t tx_timeouts;
     uint32_t rx_packets;
     uint32_t rx_invalid;

@@ -67,6 +67,19 @@ if(POWERMESH_JOIN_ONLY)
     endif()
 endif()
 
+option(POWERMESH_IPV6_TEST "Run G3 IPv6 diagnostic" OFF)
+
+if(POWERMESH_IPV6_TEST)
+    if(NOT POWERMESH_TRANSPORT STREQUAL "ST8500")
+        message(FATAL_ERROR "IPv6 test requires ST8500")
+    endif()
+
+    if(NOT POWERMESH_PHY_TEST STREQUAL "OFF" OR
+       POWERMESH_JOIN_ONLY)
+        message(FATAL_ERROR "IPv6 test requires normal G3 mode")
+    endif()
+endif()
+
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Enable CMake support for ASM and C languages
@@ -117,6 +130,12 @@ if(POWERMESH_JOIN_ONLY)
     )
 endif()
 
+if(POWERMESH_IPV6_TEST)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        POWERMESH_IPV6_TEST
+    )
+endif()
+
 if(POWERMESH_PHY_TEST STREQUAL "TX" OR
    POWERMESH_PHY_TEST STREQUAL "RX")
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
@@ -134,6 +153,12 @@ if(POWERMESH_TRANSPORT STREQUAL "ST8500")
             set(POWERMESH_IMAGE_NAME "GatewayJoin")
         else()
             set(POWERMESH_IMAGE_NAME "EndpointJoin")
+        endif()
+    elseif(POWERMESH_IPV6_TEST)
+        if(POWERMESH_ROLE STREQUAL "GATEWAY")
+            set(POWERMESH_IMAGE_NAME "GatewayIPv6")
+        else()
+            set(POWERMESH_IMAGE_NAME "EndpointIPv6")
         endif()
     elseif(POWERMESH_ROLE STREQUAL "GATEWAY")
         set(POWERMESH_IMAGE_NAME "GatewayPLC")
@@ -192,6 +217,13 @@ if(POWERMESH_TRANSPORT STREQUAL "ST8500")
     target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         Core/Src/st8500_boot.c
         Core/Src/st8500_g3.c
+        Core/Src/st8500_g3_codec.c
         "${ST8500_IMAGES_ASM}"
     )
+
+    if(POWERMESH_IPV6_TEST)
+        target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+            Core/Src/st8500_ipv6_diag.c
+        )
+    endif()
 endif()

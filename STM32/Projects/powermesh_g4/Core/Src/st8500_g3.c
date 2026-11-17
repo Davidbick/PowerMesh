@@ -210,93 +210,17 @@ static void write_u32(uint8_t *data, uint32_t value)
     }
 }
 
-static uint16_t crc16_xmodem(const uint8_t *data, uint16_t length)
-{
-    uint16_t crc = 0U;
-
-    for (uint16_t i = 0U; i < length; i++)
-    {
-        crc ^= (uint16_t)data[i] << 8;
-
-        for (uint8_t bit = 0U; bit < 8U; bit++)
-        {
-            crc = (crc & 0x8000U) != 0U ?
-                (uint16_t)((crc << 1) ^ 0x1021U) :
-                (uint16_t)(crc << 1);
-        }
-    }
-
-    return crc;
-}
-
-static bool valid_ipv6_packet(const uint8_t *packet, uint16_t length)
-{
-    if (packet == NULL || length < 40U ||
-        length > ST8500_G3_MAX_IPV6_SIZE ||
-        (packet[0] >> 4) != 6U)
-    {
-        return false;
-    }
-
-    uint16_t payload_length =
-        ((uint16_t)packet[4] << 8) | packet[5];
-
-    return (uint32_t)payload_length + 40U == length;
-}
-
 static void handle_adp_data_indication(
     st8500_g3_t *g3,
     const uint8_t *data,
     uint16_t length
 )
 {
-    if (length < 14U)
-    {
-        g3->rx_invalid++;
-        return;
-    }
+    const uint8_t *packet = NULL;
+    uint16_t packet_length = 0U;
 
-    uint16_t nsdu_length = read_u16(data);
-    uint8_t address_mode = data[2];
-    uint16_t index = 5U;
-
-    if (address_mode == 2U)
-    {
-        index += 2U;
-    }
-    else if (address_mode == 3U)
-    {
-        index += 8U;
-    }
-    else if (address_mode != 0U)
-    {
-        g3->rx_invalid++;
-        return;
-    }
-
-    // LQI, phase, modulation type, scheme and 3-byte tone map.
-    index += 7U;
-
-    if (index >= length)
-    {
-        g3->rx_invalid++;
-        return;
-    }
-
-    uint8_t bc0_count = data[index++];
-
-    if (bc0_count > 6U ||
-        (uint32_t)index + bc0_count + 1U > length)
-    {
-        g3->rx_invalid++;
-        return;
-    }
-
-    // Skip the BC0 list and previous-hop medium.
-    index = (uint16_t)(index + bc0_count + 1U);
-
-    if (nsdu_length != (uint16_t)(length - index) ||
-        !valid_ipv6_packet(&data[index], nsdu_length))
+    if (!st8500_adp_decode_indication(
+            data, length, &packet, &packet_length))
     {
         g3->rx_invalid++;
         return;
@@ -307,9 +231,7 @@ static void handle_adp_data_indication(
     if (g3->on_ipv6 != NULL)
     {
         g3->on_ipv6(
-            &data[index],
-            nsdu_length,
-            g3->on_ipv6_context
+            packet, packet_length, g3->on_ipv6_context
         );
     }
 }
@@ -711,11 +633,26 @@ static void handle_frame(st8500_g3_t *g3)
             g3->tx_failed++;
             g3_log_number("G3 data interface error", error);
         }
-        else if (data_length >= 3U &&
-                 payload[1] == g3->tx_handle)
+        else if (data_length != 3U)
+        {
+            g3->tx_pending = false;
+            g3->last_tx_status = 0xFEU; // Local malformed-confirmation marker.
+            g3->tx_bad_confirms++;
+            g3->tx_failed++;
+            g3_log("Invalid ADPD confirmation length");
+        }
+        else if (payload[1] != g3->tx_handle)
+        {
+            g3->tx_bad_confirms++;
+            g3_log_number(
+                "Unexpected ADPD confirmation handle", payload[1]
+            );
+        }
+        else
         {
             g3->tx_pending = false;
             g3->last_tx_status = payload[0];
+            g3->last_tx_media = payload[2];
 
             if (payload[0] == 0U)
             {
@@ -802,7 +739,7 @@ static void receive_byte(st8500_g3_t *g3, uint8_t byte)
     if (g3->expected_length != 0U &&
         g3->frame_length == g3->expected_length)
     {
-        uint16_t calculated = crc16_xmodem(
+        uint16_t calculated = st8500_g3_crc16(
             g3->frame,
             (uint16_t)(g3->frame_length - 2U)
         );
@@ -930,7 +867,7 @@ static bool send_frame(
         memcpy(&frame[G3_HEADER_SIZE], payload, payload_length);
     }
 
-    uint16_t crc = crc16_xmodem(frame, length - 2U);
+    uint16_t crc = st8500_g3_crc16(frame, length - 2U);
     write_u16(&frame[length - 2U], crc);
 
     return HAL_UART_Transmit(
@@ -1275,12 +1212,12 @@ bool st8500_g3_send_ipv6(
     if (g3 == NULL || g3->uart == NULL ||
         g3->state != ST8500_G3_NETWORK_READY ||
         g3->tx_pending || g3->waiting_reply ||
-        !valid_ipv6_packet(packet, length))
+        !st8500_g3_valid_ipv6(packet, length))
     {
         return false;
     }
 
-    // Do not transmit before a device joins the coordinator.
+    // The coordinator must have a joined device before sending IPv6.
     if (g3->coordinator && g3->joined_devices == 0U)
     {
         return false;
@@ -1291,42 +1228,27 @@ bool st8500_g3_send_ipv6(
         return false;
     }
 
-    uint8_t *frame = g3->tx_frame;
-    uint16_t payload_length = (uint16_t)(length + 5U);
-    uint16_t frame_length = (uint16_t)(length + 17U);
-    uint8_t handle = g3->next_handle++;
+    uint8_t handle = g3->next_handle;
+    uint16_t frame_length = 0U;
 
-    memset(frame, 0, G3_HEADER_SIZE);
-
-    frame[0] = G3_SYNC;
-    frame[1] = G3_SYNC;
-    frame[2] = G3_ADP_DATA_REQ;
-
-    write_u16(&frame[3], payload_length);
-
-    // ADPD-DATA.Request fields.
-    write_u16(&frame[10], length);
-    frame[12] = handle;
-    frame[13] = 1U;
-    frame[14] = 0U;
-
-    memcpy(&frame[15], packet, length);
-
-    uint16_t crc = crc16_xmodem(
-        frame,
-        (uint16_t)(frame_length - 2U)
-    );
-
-    write_u16(&frame[frame_length - 2U], crc);
-
-    if (HAL_UART_Transmit_DMA(
-            g3->uart,
-            frame,
-            frame_length) != HAL_OK)
+    if (!st8500_adp_encode_request(
+            g3->tx_frame,
+            sizeof(g3->tx_frame),
+            packet,
+            length,
+            handle,
+            &frame_length))
     {
         return false;
     }
 
+    if (HAL_UART_Transmit_DMA(
+            g3->uart, g3->tx_frame, frame_length) != HAL_OK)
+    {
+        return false;
+    }
+
+    g3->next_handle++;
     g3->tx_handle = handle;
     g3->tx_started_ms = HAL_GetTick();
     g3->tx_pending = true;

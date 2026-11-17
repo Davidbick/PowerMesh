@@ -76,6 +76,20 @@
             "cacheVariables": {
                 "POWERMESH_JOIN_ONLY": "ON"
             }
+        },
+        {
+            "name": "GatewayIPv6",
+            "inherits": "GatewayPLC",
+            "cacheVariables": {
+                "POWERMESH_IPV6_TEST": "ON"
+            }
+        },
+        {
+            "name": "EndpointIPv6",
+            "inherits": "EndpointPLC",
+            "cacheVariables": {
+                "POWERMESH_IPV6_TEST": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -114,6 +128,14 @@
         {
             "name": "EndpointJoin",
             "configurePreset": "EndpointJoin"
+        },
+        {
+            "name": "GatewayIPv6",
+            "configurePreset": "GatewayIPv6"
+        },
+        {
+            "name": "EndpointIPv6",
+            "configurePreset": "EndpointIPv6"
         }
     ]
 }
