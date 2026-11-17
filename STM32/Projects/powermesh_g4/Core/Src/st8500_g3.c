@@ -1,4 +1,5 @@
 #include "st8500_g3.h"
+#include "st8500_boot.h"
 #include "powermesh_board.h"
 
 #include <stdio.h>
@@ -45,6 +46,8 @@
 #define G3_BOOT_SRV_SETPSK_REQ   0xC5U
 #define G3_BOOT_SRV_SETPSK_CONF  0xC6U
 #define G3_ERROR_IND            0xFFU
+#define G3_RTE_FATAL_ERROR      0x06U
+#define G3_RTE_NO_RESPONSE      0x07U
 
 #define G3_MODE_PHY             0x00U
 #define G3_MODE_BOOT            0x03U
@@ -552,6 +555,15 @@ static void handle_frame(st8500_g3_t *g3)
     else if (command == G3_ERROR_IND)
     {
         g3_log_number("G3 error indication", error);
+
+        if (error == G3_RTE_FATAL_ERROR ||
+            error == G3_RTE_NO_RESPONSE)
+        {
+            g3->fatal_error = error;
+            g3->recovery_needed = true;
+            g3->state = ST8500_G3_FAILED;
+            g3_log("ST8500 requires recovery");
+        }
     }
 
     if (g3->waiting_reply && command == g3->expected_reply)
@@ -624,7 +636,8 @@ static void receive_byte(st8500_g3_t *g3, uint8_t byte)
 
 void st8500_g3_poll(st8500_g3_t *g3)
 {
-    if (g3 == NULL || g3->uart == NULL)
+    if (g3 == NULL || g3->uart == NULL ||
+        g3->recovery_needed)
     {
         return;
     }
@@ -672,6 +685,11 @@ void st8500_g3_poll(st8500_g3_t *g3)
         );
 
         receive_byte(g3, byte);
+
+        if (g3->recovery_needed)
+        {
+            return;
+        }
     }
 
     if (g3->tx_pending &&
@@ -757,6 +775,12 @@ static bool send_request(
     while ((uint32_t)(HAL_GetTick() - started) < G3_CMD_TIMEOUT_MS)
     {
         st8500_g3_poll(g3);
+
+        if (g3->recovery_needed)
+        {
+            g3->waiting_reply = false;
+            return false;
+        }
 
         if (g3->reply_received)
         {
@@ -1265,7 +1289,7 @@ static bool phy_set_state(st8500_g3_t *g3, uint8_t state)
         return false;
     }
 
-    return send_request(
+    bool ready = send_request(
         g3,
         G3_PHY_SETTRXSTATE_REQ,
         G3_PHY_SETTRXSTATE_CONF,
@@ -1274,6 +1298,13 @@ static bool phy_set_state(st8500_g3_t *g3, uint8_t state)
     ) &&
     g3->reply_length == 1U &&
     g3->reply[0] == 0U;
+
+    if (ready)
+    {
+        g3->phy_trx_state = state;
+    }
+
+    return ready;
 }
 
 bool st8500_g3_phy_set_tx(st8500_g3_t *g3)
@@ -1284,4 +1315,72 @@ bool st8500_g3_phy_set_tx(st8500_g3_t *g3)
 bool st8500_g3_phy_set_rx(st8500_g3_t *g3)
 {
     return phy_set_state(g3, 0x0AU);
+}
+
+// Reload the modem after an RTE failure, preserving mode and callbacks.
+bool st8500_g3_recover(st8500_g3_t *g3)
+{
+    if (g3 == NULL || g3->uart == NULL)
+    {
+        return false;
+    }
+
+    UART_HandleTypeDef *uart = g3->uart;
+    bool phy_test = g3->phy_test;
+    bool coordinator = g3->coordinator;
+    uint8_t phy_state = g3->phy_trx_state;
+
+    st8500_g3_ipv6_callback_t callback = g3->on_ipv6;
+    void *context = g3->on_ipv6_context;
+
+    uint32_t rx_indications = g3->phy_rx_indications;
+    uint32_t rx_matches = g3->phy_rx_matches;
+
+    // Stop UART DMA before returning to the ROM bootloader.
+    if (HAL_UART_Abort(uart) != HAL_OK)
+    {
+        goto failed;
+    }
+
+    if (!st8500_boot_load(uart))
+    {
+        goto failed;
+    }
+
+    bool started = phy_test ?
+        st8500_g3_start_phy(g3, uart) :
+        st8500_g3_start(g3, uart, coordinator);
+
+    if (!started)
+    {
+        goto failed;
+    }
+
+    st8500_g3_set_receive_callback(g3, callback, context);
+
+    // Normal G3 mode is reconfigured by st8500_g3_start().
+    if (phy_test && phy_state != 0U &&
+        !phy_set_state(g3, phy_state))
+    {
+        goto failed;
+    }
+
+    g3->phy_rx_indications += rx_indications;
+    g3->phy_rx_matches += rx_matches;
+    g3_log("ST8500 recovery complete");
+    return true;
+
+failed:
+    // Preserve requested configuration if another recovery is required.
+    g3->uart = uart;
+    g3->phy_test = phy_test;
+    g3->coordinator = coordinator;
+    g3->phy_trx_state = phy_state;
+    g3->on_ipv6 = callback;
+    g3->on_ipv6_context = context;
+    g3->phy_rx_indications = rx_indications;
+    g3->phy_rx_matches = rx_matches;
+    g3->recovery_needed = true;
+    g3->state = ST8500_G3_FAILED;
+    return false;
 }

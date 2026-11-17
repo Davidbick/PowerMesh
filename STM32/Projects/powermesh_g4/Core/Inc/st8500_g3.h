@@ -65,6 +65,9 @@ typedef struct
     st8500_g3_state_t state;
     bool coordinator;
     bool phy_test;
+    bool recovery_needed;
+    uint8_t fatal_error;
+    uint8_t phy_trx_state;
     uint32_t phy_rx_indications;
     uint32_t phy_rx_matches;
     st8500_phy_rx_debug_t phy_rx_debug;
@@ -149,5 +152,7 @@ bool st8500_g3_phy_send_once(st8500_g3_t *g3);
 
 bool st8500_g3_phy_set_tx(st8500_g3_t *g3);
 bool st8500_g3_phy_set_rx(st8500_g3_t *g3);
+
+bool st8500_g3_recover(st8500_g3_t *g3);
 
 #endif

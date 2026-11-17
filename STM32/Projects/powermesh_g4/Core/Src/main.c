@@ -453,7 +453,8 @@ int main(void)
 #if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
 
 #if defined(POWERMESH_PHY_DIRECT_TEST)
-  if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART))
+  if (!st8500_g3_start_phy(&g3, POWERMESH_LINK_UART) &&
+      !st8500_g3_recover(&g3))
   {
       Error_Handler();
   }
@@ -520,6 +521,11 @@ int main(void)
           (void)HAL_UART_Transmit(
               &hlpuart1, (uint8_t *)line, (uint16_t)length, 100U
           );
+      }
+
+      if (g3.recovery_needed)
+      {
+          break;
       }
 
       // Keep the 200 ms gap; thermal flags are reported, not a stop condition.
@@ -601,7 +607,8 @@ int main(void)
   if (!st8500_g3_start(
           &g3,
           POWERMESH_LINK_UART,
-          coordinator))
+          coordinator) &&
+      !st8500_g3_recover(&g3))
   {
       while (1)
       {
@@ -682,7 +689,49 @@ int main(void)
 #endif
 
 #if defined(POWERMESH_TRANSPORT_ST8500)
-    st8500_g3_poll(&g3);
+    static uint8_t recovery_attempts = 0U;
+    static uint32_t last_recovery_ms = 0U;
+    uint32_t recovery_tick = HAL_GetTick();
+
+    if (g3.recovery_needed &&
+        recovery_attempts < 3U &&
+        (recovery_attempts == 0U ||
+         (uint32_t)(recovery_tick - last_recovery_ms) >= 5000U))
+    {
+        recovery_attempts++;
+        last_recovery_ms = recovery_tick;
+
+        char message[120];
+        int length = snprintf(
+            message,
+            sizeof(message),
+            "[G3] Recovery %u/3 | Error=%u | RX=%lu\r\n",
+            recovery_attempts,
+            g3.fatal_error,
+            (unsigned long)g3.phy_rx_matches
+        );
+
+        if (length > 0 && (size_t)length < sizeof(message))
+        {
+            (void)HAL_UART_Transmit(
+                &hlpuart1, (uint8_t *)message, (uint16_t)length, 100U
+            );
+        }
+
+        bool recovered = st8500_g3_recover(&g3);
+        const char *result = recovered ?
+            "[G3] Recovery successful\r\n" :
+            "[G3] Recovery failed\r\n";
+
+        (void)HAL_UART_Transmit(
+            &hlpuart1, (uint8_t *)result, (uint16_t)strlen(result), 100U
+        );
+    }
+
+    if (!g3.recovery_needed)
+    {
+        st8500_g3_poll(&g3);
+    }
 
 #if defined(POWERMESH_PHY_TEST_TX) || defined(POWERMESH_PHY_TEST_RX)
 #if defined(POWERMESH_PHY_DIRECT_TEST) && defined(POWERMESH_PHY_TEST_RX)
@@ -693,7 +742,7 @@ int main(void)
 
     bool new_frame = g3.phy_rx_indications != last_rx_indications;
 
-    if (new_frame || (uint32_t)(tick - last_rx_report_ms) >= 5000U)
+    if ((uint32_t)(tick - last_rx_report_ms) >= 5000U)
     {
         last_rx_indications = g3.phy_rx_indications;
         last_rx_report_ms = tick;
