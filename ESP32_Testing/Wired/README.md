@@ -1,5 +1,5 @@
 # ESP32 Testing (Wired)
-This is the active ESP32-S3 Matter light endpoint. The original Pi -> STM32F4 -> STM32G4 -> ESP32 wired prototype is being integrated with the STM32G4 -> ST8500 G3 PLC -> STM32G4 path. The ESP32 still receives and returns complete IPv6 packets through the same framed UART interface. The PLC path has not yet been validated end to end.
+This is the active ESP32-S3 Matter light endpoint. The original Pi -> STM32F4 -> STM32G4 -> ESP32 wired prototype is being integrated with the STM32G4 -> ST8500 G3 PLC -> STM32G4 path. The ESP32 still receives and returns complete IPv6 packets through the same framed UART interface. The G3 PLC path has been verified end to end for link-local unicast UDP echo; Matter discovery and commands are not yet verified.
 
 Using ESP IDF 6.0.2 and ESP Matter 1.6.0 in a WSL environment. Please install the necessary dependencies and applications to build and flash the project.
 
@@ -16,7 +16,7 @@ In addition, use a nRF Connect to check if the BLE is being broadcasted while op
 The ESP32 does not change state when the color red is selected on Home Assistant. It is unknown how much colors are effected.
 
 ### Matter Command Processing
-Home Assistant/Matter Server sends IPv6 packets through the Pi TUN, gateway STM32G4, both ST8500 modems and endpoint STM32G4. The ESP32 deframes the UART data and passes the IPv6 payload into lwIP/Matter. State updates and responses follow the same path in reverse. The endpoint address is `fd00:706d::781d:ff:fe00:1`. Matter discovery retains the temporary CHIP mDNS address-policy patch described below.
+Home Assistant/Matter Server sends IPv6 packets through the Pi TUN, gateway STM32G4, both ST8500 modems and endpoint STM32G4. The ESP32 deframes the UART data and passes the IPv6 payload into lwIP/Matter. State updates and responses follow the same path in reverse. The proven G3 PLC endpoint address is `fe80::781d:ff:fe00:1`. The CHIP mDNS patch below advertises that link-local address and permits mDNS over the UART `uaN` interface. Unicast UDP has been verified over G3; mDNS multicast and Matter commands still need testing.
 
 ## ESP32 Build + Flashing
 ### CMake Changes
@@ -35,15 +35,24 @@ echo "$SRC"
 ls -l "$SRC"
 ```
 
-If the prior patch is installed, first restore the saved original SDK source from `"$SRC.powermesh.bak"`. The patch script refuses to run on an already patched file. Then apply the updated policy for `fd00:706d::781d:ff:fe00:1`:
+If the previous mDNS patch was installed, restore the active SDK source from its original backup before applying the updated link-local patch. Preserve the old patched source for rollback. **Do not overwrite a `.powermesh.bak` with already-patched code.**
+
 ```bash
-if [[ -f "$SRC.powermesh.bak" ]]; then
-  cp "$SRC.powermesh.bak" "$SRC"
-  rm "$SRC.powermesh.bak"
+# Run after git pull, with SRC set to the active CHIP SDK file as shown above.
+if [[ ! -f "$SRC.powermesh.bak" ]]; then
+  echo "ERROR: original CHIP source backup missing. Stop and inspect SRC."
+else
+  cp "$SRC" "$SRC.before_linklocal" &&
+  cp "$SRC.powermesh.bak" "$SRC" &&
+  mv "$SRC.powermesh.bak" "$SRC.original.before_linklocal" &&
+  python3 "$HOME/PowerMesh/ESP32_Testing/Wired/apply_minimal_mdns_tunnel_patch_v2.py" "$SRC" &&
+  grep -n -E 'fe80::781d|TunnelAddressIterator|strncmp\(name, "ua"' "$SRC"
 fi
-python3 $HOME/PowerMesh/ESP32_Testing/Wired/apply_minimal_mdns_tunnel_patch_v2.py "$SRC"
 ```
 
+The grep should find the link-local address and `TunnelAddressIterator`, but **no** `strncmp(name, "ua"` exclusion. Only run this migration when the original backup matches the active SDK source. If no original backup exists, do not apply the script over an unknown patched source. The script creates a new `.powermesh.bak` from the restored CHIP source.
+
+Build and flash normally without erasing NVS or factory-resetting the ESP32 to preserve Matter commissioning.
 
 ### Building
 Activating the ESP-IDF version:
@@ -118,8 +127,10 @@ If the ESP32 has not been commissioned yet, then commission it.
 
 After the G3 join and IPv6 tests pass, run `RaspberryPi/test_tun_udp_echo.py` and try changing the light state through Home Assistant. The G3 PLC forwarding path must be verified on hardware before treating this as a working end-to-end demo.
 
-The Matter traffic can also be seen by entering this in another SSH terminal of the RPI:
+The Matter discovery and control traffic can be checked in another Pi terminal:
 ```
 sudo tcpdump -ni powermesh0 -tttt -vv \
-  'ip6 and udp port 5540'
+  'ip6 and (udp port 5353 or udp port 5540)'
 ```
+
+Link-local IPv6 requires the correct interface scope (`powermesh0`). If the ESP32 transmits multicast mDNS but nothing arrives on the Pi, verify G3 multicast forwarding before changing Matter commissioning.

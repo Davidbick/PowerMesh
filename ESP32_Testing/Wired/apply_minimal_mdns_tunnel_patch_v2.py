@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Apply the PowerMesh test address policy to CHIP Minimal mDNS.
 
-Use only with the PowerMesh test firmware. The patch skips the custom uaN
-interface for mDNS listener sockets (so mDNS is transmitted on the physical
-LAN interface), but returns fd00:706d::781d:ff:fe00:1 as the Matter hostname's IPv6 address.
-IPv4 address records are suppressed for this test endpoint.
+For the PowerMesh test firmware, permit mDNS on the custom uaN interface and
+advertise fe80::781d:ff:fe00:1 as the Matter hostname's IPv6 address.
+IPv4 address records remain suppressed.
 
 A backup is created as <source>.powermesh.bak. This script refuses to overwrite
 an existing backup or to patch source that already has this change.
@@ -17,35 +16,11 @@ from pathlib import Path
 
 TAG = "PowerMesh test policy"
 
-WLAN_BLOCK = '''    // skip IEEE 802.15.4 / Thread interfaces — not suitable for mDNS
-    if (strncmp(name, "wpan", 4) == 0)
-    {
-        return false;
-    }
-
-    return true;
-'''
-WLAN_BLOCK_REPLACEMENT = '''    // skip IEEE 802.15.4 / Thread interfaces — not suitable for mDNS
-    if (strncmp(name, "wpan", 4) == 0)
-    {
-        return false;
-    }
-
-    // PowerMesh uses uaN as a point-to-point tunnel, not a physical LAN.
-    // Keep mDNS listeners/multicast on the physical LAN interface.
-    if (strncmp(name, "ua", 2) == 0)
-    {
-        return false;
-    }
-
-    return true;
-'''
-
 FUNCTION_ANCHOR = 'bool AllInterfaces::CurrentInterfaceHasAddressOfType(chip::Inet::IPAddressType type)'
 TUNNEL_ITERATOR = r'''/*
- * PowerMesh test policy: advertise the custom UART-interface ULA as the
- * Matter hostname's IPv6 address, regardless of which physical interface
- * received the mDNS query. Do not publish an IPv4 A record for this endpoint.
+ * PowerMesh test policy: advertise the UART interface's link-local IPv6
+ * address as the Matter hostname's IPv6 address in DNS-SD responses.
+ * Do not publish IPv4 A records for this endpoint.
  * Apply only to the PowerMesh test firmware.
  */
 class TunnelAddressIterator : public mdns::Minimal::IpAddressIterator
@@ -72,7 +47,7 @@ public:
             return false;
         }
 
-        if (!chip::Inet::IPAddress::FromString("fd00:706d::781d:ff:fe00:1", dest))
+        if (!chip::Inet::IPAddress::FromString("fe80::781d:ff:fe00:1", dest))
         {
             ChipLogError(Discovery, "Failed to parse PowerMesh tunnel IPv6 address");
             return false;
@@ -125,8 +100,6 @@ def main() -> int:
         text = replace_once(text, include_anchor,
                             include_anchor + "\n\n#include <string.h>",
                             "CHIP logging include")
-        text = replace_once(text, WLAN_BLOCK, WLAN_BLOCK_REPLACEMENT,
-                            "wpan interface-filter block")
         # Insert immediately before the definition, independently of blank-line style
         # between AllAddressesIterator's closing brace and this function.
         text = replace_once(text, FUNCTION_ANCHOR,
@@ -149,7 +122,7 @@ def main() -> int:
     path.write_text(text, encoding="utf-8")
     print(f"Patched source: {path}")
     print(f"Original backup: {backup}")
-    print("Policy applied: uaN excluded as mDNS listener; AAAA response address set to fd00:706d::781d:ff:fe00:1; A records suppressed.")
+    print("Policy applied: uaN allowed for mDNS; AAAA address set to fe80::781d:ff:fe00:1; A records suppressed.")
     print("This patch is for the PowerMesh test firmware only.")
     return 0
 
