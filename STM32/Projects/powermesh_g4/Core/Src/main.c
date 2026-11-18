@@ -33,6 +33,9 @@
 #if defined(POWERMESH_TRANSPORT_ST8500)
 #include "st8500_boot.h"
 #include "st8500_g3.h"
+#if defined(POWERMESH_UDP_ECHO_TEST)
+#include "st8500_udp_echo.h"
+#endif
 #if defined(POWERMESH_IPV6_TEST)
 #include "st8500_ipv6_diag.h"
 #endif
@@ -841,7 +844,8 @@ int main(void)
   }
 
 #if !defined(POWERMESH_JOIN_ONLY) && \
-    !defined(POWERMESH_IPV6_TEST)
+    !defined(POWERMESH_IPV6_TEST) && \
+    !defined(POWERMESH_UDP_ECHO_TEST)
   uart_transport_t *local_transport;
   UART_HandleTypeDef *local_uart;
   packet_port_t *local_port;
@@ -900,6 +904,10 @@ int main(void)
 
 #if defined(POWERMESH_IPV6_TEST)
   st8500_g3_set_receive_callback(&g3, on_ipv6_diag_packet, NULL);
+#endif
+
+#if defined(POWERMESH_UDP_ECHO_TEST)
+  st8500_g3_set_receive_callback(&g3, udp_echo_on_ipv6, NULL);
 #endif
 #endif
 #endif
@@ -1117,13 +1125,55 @@ int main(void)
 
 #else
 #if !defined(POWERMESH_JOIN_ONLY) && \
-    !defined(POWERMESH_IPV6_TEST)
+    !defined(POWERMESH_IPV6_TEST) && \
+    !defined(POWERMESH_UDP_ECHO_TEST)
     uart_transport_poll(local_transport);
     packet_router_poll(&router);
 #endif
 
 #if defined(POWERMESH_IPV6_TEST)
     ipv6_diag_poll();
+#endif
+
+#if defined(POWERMESH_UDP_ECHO_TEST)
+    udp_echo_poll(&g3);
+
+    static uint32_t last_udp_report_ms = 0U;
+    uint32_t udp_now = HAL_GetTick();
+
+    if ((uint32_t)(udp_now - last_udp_report_ms) >= 5000U)
+    {
+        last_udp_report_ms = udp_now;
+
+        const udp_echo_stats_t *s = udp_echo_get_stats();
+        char line[220];
+
+        int n = snprintf(
+            line, sizeof(line),
+            "[UDP] RX=%lu Req=%lu Bad=%lu Busy=%lu "
+            "TX=%lu OK=%lu Fail=%lu Pending=%u "
+            "G3TX=%lu Status=%u\r\n",
+            (unsigned long)s->received,
+            (unsigned long)s->requests,
+            (unsigned long)s->bad_checksum,
+            (unsigned long)s->busy,
+            (unsigned long)s->submitted,
+            (unsigned long)s->confirmed,
+            (unsigned long)s->failed,
+            s->pending ? 1U : 0U,
+            (unsigned long)g3.tx_requested,
+            g3.last_tx_status
+        );
+
+        if (n > 0 && (size_t)n < sizeof(line) &&
+            hlpuart1.gState == HAL_UART_STATE_READY)
+        {
+            (void)HAL_UART_Transmit(
+                &hlpuart1, (uint8_t *)line,
+                (uint16_t)n, 100U
+            );
+        }
+    }
 #endif
 
 #if defined(POWERMESH_JOIN_MONITOR)

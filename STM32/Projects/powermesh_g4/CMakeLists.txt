@@ -68,6 +68,17 @@ if(POWERMESH_JOIN_ONLY)
 endif()
 
 option(POWERMESH_IPV6_TEST "Run G3 IPv6 diagnostic" OFF)
+option(POWERMESH_UDP_ECHO_TEST "STM32 UDP echo test" OFF)
+
+if(POWERMESH_UDP_ECHO_TEST)
+    if(NOT POWERMESH_TRANSPORT STREQUAL "ST8500" OR
+       NOT POWERMESH_ROLE STREQUAL "ENDPOINT" OR
+       NOT POWERMESH_PHY_TEST STREQUAL "OFF" OR
+       POWERMESH_JOIN_ONLY OR POWERMESH_IPV6_TEST)
+        message(FATAL_ERROR
+            "UDP echo requires endpoint normal G3 mode")
+    endif()
+endif()
 
 if(POWERMESH_IPV6_TEST)
     if(NOT POWERMESH_TRANSPORT STREQUAL "ST8500")
@@ -136,6 +147,12 @@ if(POWERMESH_IPV6_TEST)
     )
 endif()
 
+if(POWERMESH_UDP_ECHO_TEST)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        POWERMESH_UDP_ECHO_TEST
+    )
+endif()
+
 if(POWERMESH_PHY_TEST STREQUAL "TX" OR
    POWERMESH_PHY_TEST STREQUAL "RX")
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
@@ -160,6 +177,8 @@ if(POWERMESH_TRANSPORT STREQUAL "ST8500")
         else()
             set(POWERMESH_IMAGE_NAME "EndpointIPv6")
         endif()
+    elseif(POWERMESH_UDP_ECHO_TEST)
+        set(POWERMESH_IMAGE_NAME "EndpointUDPEcho")
     elseif(POWERMESH_ROLE STREQUAL "GATEWAY")
         set(POWERMESH_IMAGE_NAME "GatewayPLC")
     else()
@@ -224,6 +243,12 @@ if(POWERMESH_TRANSPORT STREQUAL "ST8500")
     if(POWERMESH_IPV6_TEST)
         target_sources(${CMAKE_PROJECT_NAME} PRIVATE
             Core/Src/st8500_ipv6_diag.c
+        )
+    endif()
+
+    if(POWERMESH_UDP_ECHO_TEST)
+        target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+            Core/Src/st8500_udp_echo.c
         )
     endif()
 endif()

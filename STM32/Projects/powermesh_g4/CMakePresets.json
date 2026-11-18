@@ -90,6 +90,13 @@
             "cacheVariables": {
                 "POWERMESH_IPV6_TEST": "ON"
             }
+        },
+        {
+            "name": "EndpointUDPEcho",
+            "inherits": "EndpointPLC",
+            "cacheVariables": {
+                "POWERMESH_UDP_ECHO_TEST": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -136,6 +143,10 @@
         {
             "name": "EndpointIPv6",
             "configurePreset": "EndpointIPv6"
+        },
+        {
+            "name": "EndpointUDPEcho",
+            "configurePreset": "EndpointUDPEcho"
         }
     ]
 }
