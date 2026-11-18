@@ -83,6 +83,13 @@ static uart_frame_t g3_received_frame;
 static uint16_t g3_rx_sequence = 0U;
 #endif
 
+#if defined(POWERMESH_TRANSPORT_ST8500) && \
+    defined(POWERMESH_ROLE_GATEWAY)
+static uint16_t gateway_last_sequence = 0U;
+static bool gateway_sequence_valid = false;
+static bool gateway_last_confirmed = false;
+#endif
+
 static uint32_t last_blink_ms = 0U;
 /* USER CODE END PV */
 
@@ -139,6 +146,41 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
 
     packet_port_t source = *(packet_port_t *)context;
 
+#if defined(POWERMESH_TRANSPORT_ST8500) && \
+    defined(POWERMESH_ROLE_GATEWAY)
+
+    if (source == PACKET_PORT_GATEWAY &&
+        frame->type == UART_FRAME_TYPE_DATA)
+    {
+        // A repeated sequence is a retry, not a new IPv6 packet.
+        if (gateway_sequence_valid &&
+            frame->sequence == gateway_last_sequence)
+        {
+            uint8_t status = gateway_last_confirmed ?
+                PACKET_ACK_G3_CONFIRMED : PACKET_ACK_ACCEPTED;
+
+            (void)send_uart_frame(
+                &gateway_transport,
+                UART_FRAME_TYPE_ACK,
+                frame->sequence,
+                &status,
+                sizeof(status)
+            );
+            return;
+        }
+
+        // The router sends the existing queue-admission ACK.
+        if (packet_router_receive(&router, source, frame))
+        {
+            gateway_last_sequence = frame->sequence;
+            gateway_sequence_valid = true;
+            gateway_last_confirmed = false;
+        }
+        return;
+    }
+
+#endif
+
     (void)packet_router_receive(
         &router,
         source,
@@ -160,6 +202,9 @@ static bool send_g3_frame(
     st8500_g3_t *modem = (st8500_g3_t *)context;
 
     static bool awaiting_confirm = false;
+#if defined(POWERMESH_ROLE_GATEWAY)
+    static bool completion_pending = false;
+#endif
     static bool retry_backoff = false;
     static uint16_t pending_sequence;
     static uint8_t pending_handle;
@@ -177,6 +222,34 @@ static bool send_g3_frame(
     {
         return false;
     }
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+    // Transmission succeeded, but the completion ACK
+    // could not necessarily enter the local UART queue yet.
+    if (completion_pending)
+    {
+        uint8_t status = PACKET_ACK_G3_CONFIRMED;
+
+        if (!send_uart_frame(
+                &gateway_transport,
+                UART_FRAME_TYPE_ACK,
+                pending_sequence,
+                &status,
+                sizeof(status)))
+        {
+            return false;
+        }
+
+        if (gateway_sequence_valid &&
+            gateway_last_sequence == pending_sequence)
+        {
+            gateway_last_confirmed = true;
+        }
+
+        completion_pending = false;
+        return true;
+    }
+#endif
 
     uint32_t now = HAL_GetTick();
 
@@ -207,7 +280,15 @@ static bool send_g3_frame(
         if (modem->tx_confirmed != confirmed_before)
         {
             retry_backoff = false;
+
+#if defined(POWERMESH_ROLE_GATEWAY)
+            // Keep this packet at the router head until its
+            // completion ACK has been queued for the Raspberry Pi.
+            completion_pending = true;
+            return false;
+#else
             return true;
+#endif
         }
 
         // Retry the queued packet after a failure or timeout.

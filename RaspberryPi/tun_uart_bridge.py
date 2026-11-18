@@ -3,7 +3,9 @@
 import argparse
 import fcntl
 import os
+import secrets
 import select
+import time
 import struct
 
 import serial
@@ -55,153 +57,122 @@ def main():
     parser = argparse.ArgumentParser(
         description="PowerMesh TUN <-> UART bridge"
     )
-
-    parser.add_argument(
-        "port",
-        help=(
-            "STM32 serial device, for example "
-            "/dev/ttyACM0 or /dev/serial/by-id/..."
-        ),
-    )
-
-    parser.add_argument(
-        "--tun",
-        default="powermesh0",
-        help="TUN interface name",
-    )
-
-    parser.add_argument(
-        "--baud",
-        type=int,
-        default=115200,
-        help="UART baud rate",
-    )
-
+    parser.add_argument("port", help="STM32 serial device")
+    parser.add_argument("--tun", default="powermesh0")
+    parser.add_argument("--baud", type=int, default=115200)
     args = parser.parse_args()
 
     tun_fd = open_tun(args.tun)
-
-    port = serial.Serial(
-        args.port,
-        baudrate=args.baud,
-        timeout=1.0,
-    )
-
+    port = serial.Serial(args.port, args.baud, timeout=1.0)
     port.reset_input_buffer()
 
-    sequence = 1
+    # One outstanding packet until ST8500 confirms transmission.
+    sequence = secrets.randbelow(65535) + 1
+    pending = None
+    queued = False
+    next_action = 0.0
 
-    print(
-        f"PowerMesh bridge started:"
-        f"\n  TUN:  {args.tun}"
-        f"\n  UART: {args.port}"
-        f"\n  Baud: {args.baud}"
-    )
+    print(f"PowerMesh bridge: {args.tun} <-> {args.port}")
+    print("G3 flow control enabled")
 
     try:
         while True:
+            # Don't drain Linux TUN while the PLC link is busy.
+            inputs = [port.fileno()]
+            if pending is None:
+                inputs.append(tun_fd)
+
             readable, _, _ = select.select(
-                [
-                    tun_fd,
-                    port.fileno(),
-                ],
-                [],
-                [],
-                1.0,
+                inputs, [], [], 0.1
             )
 
-            # Exit on disconnect so a service manager can restart the bridge.
             if not os.path.exists(args.port):
                 raise serial.SerialException(
-                    f"STM32 serial device disconnected: {args.port}"
+                    f"STM32 disconnected: {args.port}"
                 )
 
-
-            #
-            # Linux -> TUN -> UART -> STM32
-            #
-            if tun_fd in readable:
-                packet = os.read(
-                    tun_fd,
-                    MAX_PAYLOAD,
-                )
-
-                if not is_ipv6(packet):
-                    print(
-                        f"DROP TUN: non-IPv6 packet "
-                        f"({len(packet)} bytes)"
-                    )
-                    continue
-
-                write_frame(
-                    port,
-                    TYPE_DATA,
-                    sequence,
-                    packet,
-                )
-
-                print(
-                    f"TUN -> UART: "
-                    f"seq={sequence}, "
-                    f"{len(packet)} bytes"
-                )
-
-                sequence = (sequence + 1) & 0xFFFF
-
-                if sequence == 0:
-                    sequence = 1
-
+            # STM32 -> Pi. Process ACKs and incoming IPv6.
             if port.fileno() in readable:
                 try:
                     frame_type, rx_sequence, payload = read_frame(
                         port
                     )
-
                 except (TimeoutError, ValueError) as error:
-                    print(
-                        f"UART frame error: {error}"
-                    )
+                    print(f"UART frame error: {error}")
                     continue
 
                 if frame_type == TYPE_ACK:
-                    status = (
-                        payload[0]
-                        if payload
-                        else None
+                    if pending is None or rx_sequence != sequence:
+                        continue
+
+                    status = payload[0] if len(payload) == 1 else None
+
+                    if status == 0:
+                        # Accepted by STM32, not yet sent over PLC.
+                        queued = True
+                        next_action = time.monotonic() + 45.0
+                        print(f"STM32 queued: seq={sequence}")
+
+                    elif status == 1:
+                        # STM32 queue full. Retain the same packet.
+                        queued = False
+                        next_action = time.monotonic() + 0.5
+                        print(f"Queue full: retrying seq={sequence}")
+
+                    elif status == 2:
+                        # ST8500 confirmed successful G3 transmission.
+                        print(f"G3 TX confirmed: seq={sequence}")
+                        pending = None
+                        queued = False
+                        sequence = (sequence % 65535) + 1
+
+                    else:
+                        print(f"Unexpected ACK status: {status}")
+
+                elif frame_type == TYPE_DATA:
+                    if is_ipv6(payload):
+                        os.write(tun_fd, payload)
+                        print(
+                            f"UART -> TUN: seq={rx_sequence}, "
+                            f"{len(payload)} bytes"
+                        )
+                    else:
+                        print("DROP UART: invalid IPv6 packet")
+
+            # Pi -> STM32. Read only when no packet is outstanding.
+            if pending is None and tun_fd in readable:
+                packet = os.read(tun_fd, MAX_PAYLOAD)
+
+                if is_ipv6(packet):
+                    pending = packet
+                    queued = False
+                    next_action = time.monotonic()
+                else:
+                    print("DROP TUN: non-IPv6 packet")
+
+            # Send, retry after queue-full, or probe missing ACKs.
+            if pending is not None:
+                now = time.monotonic()
+
+                if now >= next_action:
+                    if queued:
+                        print(
+                            f"Waiting for G3 confirmation, "
+                            f"probing seq={sequence}"
+                        )
+
+                    write_frame(
+                        port, TYPE_DATA, sequence, pending
                     )
 
                     print(
-                        f"UART ACK: "
-                        f"seq={rx_sequence}, "
-                        f"status={status}"
+                        f"TUN -> UART: seq={sequence}, "
+                        f"{len(pending)} bytes"
                     )
 
-                    continue
-
-                if frame_type != TYPE_DATA:
-                    print(
-                        f"UART: unsupported frame type "
-                        f"{frame_type}"
-                    )
-                    continue
-
-                if not is_ipv6(payload):
-                    print(
-                        f"DROP UART: DATA payload is "
-                        f"not IPv6 ({len(payload)} bytes)"
-                    )
-                    continue
-
-                os.write(
-                    tun_fd,
-                    payload,
-                )
-
-                print(
-                    f"UART -> TUN: "
-                    f"seq={rx_sequence}, "
-                    f"{len(payload)} bytes"
-                )
+                    # A missing queue ACK is retried quickly.
+                    # An accepted packet is only re-probed after 45s.
+                    next_action = now + (45.0 if queued else 2.0)
 
     except KeyboardInterrupt:
         print("\nStopping PowerMesh bridge.")
@@ -209,7 +180,6 @@ def main():
     finally:
         port.close()
         os.close(tun_fd)
-
 
 if __name__ == "__main__":
     main()
