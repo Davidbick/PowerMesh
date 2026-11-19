@@ -87,7 +87,7 @@ static uint16_t g3_rx_sequence = 0U;
     defined(POWERMESH_ROLE_GATEWAY)
 static uint16_t gateway_last_sequence = 0U;
 static bool gateway_sequence_valid = false;
-static bool gateway_last_confirmed = false;
+static uint8_t gateway_last_status = PACKET_ACK_ACCEPTED;
 #endif
 
 static uint32_t last_blink_ms = 0U;
@@ -156,8 +156,7 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
         if (gateway_sequence_valid &&
             frame->sequence == gateway_last_sequence)
         {
-            uint8_t status = gateway_last_confirmed ?
-                PACKET_ACK_G3_CONFIRMED : PACKET_ACK_ACCEPTED;
+            uint8_t status = gateway_last_status;
 
             (void)send_uart_frame(
                 &gateway_transport,
@@ -174,7 +173,7 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
         {
             gateway_last_sequence = frame->sequence;
             gateway_sequence_valid = true;
-            gateway_last_confirmed = false;
+            gateway_last_status = PACKET_ACK_ACCEPTED;
         }
         return;
     }
@@ -190,6 +189,11 @@ static void on_uart_frame(const uart_frame_t *frame, void *context)
 
 #if defined(POWERMESH_TRANSPORT_ST8500)
 
+#define POWERMESH_G3_MAX_ATTEMPTS 2U
+#define POWERMESH_G3_RETRY_GAP_MS 1500U
+#define POWERMESH_G3_TIMEOUT_COOLDOWN_MS 2000U
+#define POWERMESH_G3_PACKET_DEADLINE_MS 20000U
+
 // Keep each router packet until its ADPD transmission is confirmed.
 static bool send_g3_frame(
     void *context,
@@ -201,18 +205,24 @@ static bool send_g3_frame(
 {
     st8500_g3_t *modem = (st8500_g3_t *)context;
 
+    static bool packet_active = false;
     static bool awaiting_confirm = false;
-#if defined(POWERMESH_ROLE_GATEWAY)
-    static bool completion_pending = false;
-#endif
-    static bool retry_backoff = false;
     static uint16_t pending_sequence;
     static uint8_t pending_handle;
     static uint32_t pending_request_count;
     static uint32_t confirmed_before;
+    static uint32_t timeouts_before;
+    static uint32_t packet_started_ms;
     static uint32_t last_failure_ms;
+    static uint32_t cooldown_ms;
+    static uint8_t attempts;
 
-    // Router ACKs are link-local and must not enter G3.
+#if defined(POWERMESH_ROLE_GATEWAY)
+    static bool completion_pending = false;
+    static uint8_t completion_status = PACKET_ACK_ACCEPTED;
+#endif
+
+    // Router ACKs are local to their UART link.
     if (type == UART_FRAME_TYPE_ACK)
     {
         return true;
@@ -223,19 +233,18 @@ static bool send_g3_frame(
         return false;
     }
 
+    uint32_t now = HAL_GetTick();
+
 #if defined(POWERMESH_ROLE_GATEWAY)
-    // Transmission succeeded, but the completion ACK
-    // could not necessarily enter the local UART queue yet.
+    // Keep the router packet until its completion ACK can be queued.
     if (completion_pending)
     {
-        uint8_t status = PACKET_ACK_G3_CONFIRMED;
-
         if (!send_uart_frame(
                 &gateway_transport,
                 UART_FRAME_TYPE_ACK,
                 pending_sequence,
-                &status,
-                sizeof(status)))
+                &completion_status,
+                sizeof(completion_status)))
         {
             return false;
         }
@@ -243,68 +252,123 @@ static bool send_g3_frame(
         if (gateway_sequence_valid &&
             gateway_last_sequence == pending_sequence)
         {
-            gateway_last_confirmed = true;
+            gateway_last_status = completion_status;
         }
 
         completion_pending = false;
+        packet_active = false;
         return true;
     }
 #endif
 
-    uint32_t now = HAL_GetTick();
+    // A new router head starts a fresh, bounded transmission.
+    if (!packet_active || pending_sequence != sequence)
+    {
+        packet_active = true;
+        awaiting_confirm = false;
+        pending_sequence = sequence;
+        packet_started_ms = now;
+        attempts = 0U;
+    }
+
+    bool succeeded = false;
+    bool timed_out = false;
 
     if (awaiting_confirm)
     {
-        if (sequence != pending_sequence)
-        {
-            return false;
-        }
-
-        // Reject a stale confirmation after modem recovery.
-        if (modem->tx_requested != pending_request_count ||
-            modem->tx_handle != pending_handle)
-        {
-            awaiting_confirm = false;
-            retry_backoff = true;
-            last_failure_ms = now;
-            return false;
-        }
-
-        if (modem->tx_pending)
+        if (modem->tx_pending &&
+            (uint32_t)(now - packet_started_ms) <
+                POWERMESH_G3_PACKET_DEADLINE_MS)
         {
             return false;
         }
 
         awaiting_confirm = false;
 
-        if (modem->tx_confirmed != confirmed_before)
+        // Only the active handle can complete this IPv6 packet.
+        if (!modem->tx_pending &&
+            modem->tx_requested == pending_request_count &&
+            modem->tx_handle == pending_handle &&
+            modem->tx_confirmed != confirmed_before)
         {
-            retry_backoff = false;
-
-#if defined(POWERMESH_ROLE_GATEWAY)
-            // Keep this packet at the router head until its
-            // completion ACK has been queued for the Raspberry Pi.
-            completion_pending = true;
-            return false;
-#else
-            return true;
-#endif
+            succeeded = true;
         }
+        else
+        {
+            timed_out = modem->tx_pending ||
+                modem->tx_timeouts != timeouts_before;
 
-        // Retry the queued packet after a failure or timeout.
-        retry_backoff = true;
-        last_failure_ms = now;
-        return false;
+            last_failure_ms = now;
+            cooldown_ms = timed_out ?
+                POWERMESH_G3_TIMEOUT_COOLDOWN_MS :
+                POWERMESH_G3_RETRY_GAP_MS;
+
+            // Do not resubmit a packet whose confirmation timed out.
+            // The modem may still be processing the original request.
+            if (timed_out)
+            {
+                attempts = POWERMESH_G3_MAX_ATTEMPTS;
+            }
+        }
     }
 
-    if (retry_backoff)
+    if (succeeded)
     {
-        if ((uint32_t)(now - last_failure_ms) < 1000U)
+#if defined(POWERMESH_ROLE_GATEWAY)
+        completion_status = PACKET_ACK_G3_CONFIRMED;
+        completion_pending = true;
+        return false;
+#else
+        packet_active = false;
+        return true;
+#endif
+    }
+
+    // A timed-out or repeatedly failed packet cannot block the queue.
+    if (attempts >= POWERMESH_G3_MAX_ATTEMPTS ||
+        (uint32_t)(now - packet_started_ms) >=
+            POWERMESH_G3_PACKET_DEADLINE_MS)
+    {
+#if defined(POWERMESH_ROLE_GATEWAY)
+        router.dropped[PACKET_PORT_GATEWAY]++;
+        completion_status = PACKET_ACK_G3_FAILED;
+        completion_pending = true;
+        return false;
+#else
+        router.dropped[PACKET_PORT_REMOTE]++;
+
+        // LPUART1 is a debug port on the endpoint, not its ESP32 link.
+        char line[128];
+        int count = snprintf(
+            line, sizeof(line),
+            "[G3] Drop seq=%u len=%u tries=%u status=0x%02X\r\n",
+            (unsigned)pending_sequence,
+            (unsigned)length,
+            (unsigned)attempts,
+            (unsigned)modem->last_tx_status
+        );
+
+        if (count > 0 && (size_t)count < sizeof(line) &&
+            hlpuart1.gState == HAL_UART_STATE_READY)
+        {
+            (void)HAL_UART_Transmit(
+                &hlpuart1, (uint8_t *)line, (uint16_t)count, 100U
+            );
+        }
+
+        packet_active = false;
+        return true;
+#endif
+    }
+
+    // Cool down between errors, including after dropping a packet.
+    if (cooldown_ms != 0U)
+    {
+        if ((uint32_t)(now - last_failure_ms) < cooldown_ms)
         {
             return false;
         }
-
-        retry_backoff = false;
+        cooldown_ms = 0U;
     }
 
     if (!st8500_g3_send_ipv6(modem, payload, length))
@@ -312,15 +376,14 @@ static bool send_g3_frame(
         return false;
     }
 
-    pending_sequence = sequence;
+    attempts++;
     pending_handle = modem->tx_handle;
     pending_request_count = modem->tx_requested;
     confirmed_before = modem->tx_confirmed;
+    timeouts_before = modem->tx_timeouts;
     awaiting_confirm = true;
-
     return false;
 }
-
 // Forward received G3 IPv6 packets into the existing router.
 static void on_g3_ipv6(
     const uint8_t *packet,

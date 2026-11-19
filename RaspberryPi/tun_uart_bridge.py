@@ -70,6 +70,7 @@ def main():
     sequence = secrets.randbelow(65535) + 1
     pending = None
     queued = False
+    pending_since = 0.0
     next_action = 0.0
 
     print(f"PowerMesh bridge: {args.tun} <-> {args.port}")
@@ -110,7 +111,7 @@ def main():
                     if status == 0:
                         # Accepted by STM32, not yet sent over PLC.
                         queued = True
-                        next_action = time.monotonic() + 45.0
+                        next_action = time.monotonic() + 15.0
                         print(f"STM32 queued: seq={sequence}")
 
                     elif status == 1:
@@ -119,9 +120,11 @@ def main():
                         next_action = time.monotonic() + 0.5
                         print(f"Queue full: retrying seq={sequence}")
 
-                    elif status == 2:
-                        # ST8500 confirmed successful G3 transmission.
-                        print(f"G3 TX confirmed: seq={sequence}")
+                    elif status in (2, 3):
+                        if status == 2:
+                            print(f"G3 TX confirmed: seq={sequence}")
+                        else:
+                            print(f"G3 TX failed: dropped seq={sequence}")
                         pending = None
                         queued = False
                         sequence = (sequence % 65535) + 1
@@ -146,13 +149,22 @@ def main():
                 if is_ipv6(packet):
                     pending = packet
                     queued = False
-                    next_action = time.monotonic()
+                    pending_since = time.monotonic()
+                    next_action = pending_since
                 else:
                     print("DROP TUN: non-IPv6 packet")
 
             # Send, retry after queue-full, or probe missing ACKs.
             if pending is not None:
                 now = time.monotonic()
+
+                # Never let one bad Matter packet block the Pi forever.
+                if now - pending_since >= 25.0:
+                    print(f"G3 TX deadline: dropping seq={sequence}")
+                    pending = None
+                    queued = False
+                    sequence = (sequence % 65535) + 1
+                    continue
 
                 if now >= next_action:
                     if queued:
@@ -170,9 +182,9 @@ def main():
                         f"{len(pending)} bytes"
                     )
 
-                    # A missing queue ACK is retried quickly.
-                    # An accepted packet is only re-probed after 45s.
-                    next_action = now + (45.0 if queued else 2.0)
+                    # Retry missing queue ACKs. Probe accepted packets
+                    # less often to avoid flooding the STM32 UART.
+                    next_action = now + (15.0 if queued else 2.0)
 
     except KeyboardInterrupt:
         print("\nStopping PowerMesh bridge.")

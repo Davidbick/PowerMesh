@@ -32,7 +32,7 @@
 #define G3_ADP_DATA_REQ         0x80U
 #define G3_ADP_DATA_CONF        0x81U
 #define G3_ADP_DATA_IND         0x82U
-#define G3_DATA_TIMEOUT_MS      30000U
+#define G3_DATA_TIMEOUT_MS      8000U
 #define G3_BOOT_SRV_START_REQ    0xB0U
 #define G3_BOOT_SRV_START_CONF   0xB1U
 #define G3_BOOT_SRV_STOP_REQ     0xB2U
@@ -825,6 +825,7 @@ void st8500_g3_poll(st8500_g3_t *g3)
             G3_DATA_TIMEOUT_MS)
     {
         g3->tx_pending = false;
+        g3->last_tx_status = 0xFDU; // Local confirmation-timeout marker.
         g3->tx_timeouts++;
         g3_log("G3 data confirmation timeout");
     }

@@ -16,6 +16,7 @@ typedef enum
 #define PACKET_ACK_ACCEPTED 0U
 #define PACKET_ACK_QUEUE_FULL 1U
 #define PACKET_ACK_G3_CONFIRMED 2U
+#define PACKET_ACK_G3_FAILED 3U
 
 typedef bool (*packet_router_send_fn)(
     void *context,
